@@ -47,17 +47,17 @@ def plot_statevector(statevector):
     ax.set_title("Statevector Probabilities")
     return fig
 
-from qiskit.providers.basicaer import QasmSimulator
+from qiskit.primitives import Sampler
+from qiskit.quantum_info import Statevector
 
 def plot_histogram(qc):
-    """Plot measurement histogram using Basic QASM simulator."""
-    backend = QasmSimulator()
+    """Plot measurement histogram using Sampler primitive."""
     qc_measure = qc.copy()
     qc_measure.measure_all()
     
-    # New API: run() instead of execute
-    job = backend.run(qc_measure, shots=1024)
-    counts = job.result().get_counts()
+    sampler = Sampler()
+    result = sampler.run(qc_measure, shots=1024).result()
+    counts = result.quasi_dists[0]
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
@@ -66,6 +66,7 @@ def plot_histogram(qc):
     ax.set_ylabel("Counts")
     ax.set_title("Measurement Histogram")
     return fig
+
 
 
 
@@ -154,6 +155,7 @@ if qc is not None:
         st.plotly_chart(fig_bloch, use_container_width=True)
 
     st.success("Visualization complete! Explore all representations interactively.")
+
 
 
 

@@ -3,7 +3,7 @@
 
 import streamlit as st
 from qiskit import QuantumCircuit
-from qiskit.providers.basicaer import QasmSimulator
+#from qiskit.providers.basicaer import QasmSimulator
 from qiskit.quantum_info import Statevector
 import plotly.graph_objects as go
 import numpy as np
@@ -155,6 +155,7 @@ if qc is not None:
         st.plotly_chart(fig_bloch, use_container_width=True)
 
     st.success("Visualization complete! Explore all representations interactively.")
+
 
 
 

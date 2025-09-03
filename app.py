@@ -2,7 +2,8 @@
 # !pip install streamlit qiskit plotly
 
 import streamlit as st
-from qiskit import QuantumCircuit, Aer, execute
+from qiskit import QuantumCircuit, execute
+from qiskit.providers.basicaer import QasmSimulator
 from qiskit.quantum_info import Statevector
 import plotly.graph_objects as go
 import numpy as np
@@ -48,7 +49,7 @@ def plot_statevector(statevector):
 
 def plot_histogram(qc):
     """Plot measurement histogram."""
-    backend = Aer.get_backend('qasm_simulator')
+    backend = QasmSimulator()
     qc_measure = qc.copy()
     qc_measure.measure_all()
     job = execute(qc_measure, backend, shots=1024)
@@ -145,3 +146,4 @@ if qc is not None:
         st.plotly_chart(fig_bloch, use_container_width=True)
 
     st.success("Visualization complete! Explore all representations interactively.")
+

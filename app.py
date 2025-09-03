@@ -48,18 +48,22 @@ def plot_statevector(statevector):
     return fig
 
 def plot_histogram(qc):
-    """Plot measurement histogram."""
+    """Plot measurement histogram using Basic QASM simulator."""
+    from qiskit.providers.basicaer import QasmSimulator
     backend = QasmSimulator()
     qc_measure = qc.copy()
     qc_measure.measure_all()
-    job = execute(qc_measure, backend, shots=1024)
+    job = backend.run(qc_measure, shots=1024)
     counts = job.result().get_counts()
+    
+    import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     ax.bar(counts.keys(), counts.values())
     ax.set_xlabel("States")
     ax.set_ylabel("Counts")
     ax.set_title("Measurement Histogram")
     return fig
+
 
 # ----------------- Streamlit App ----------------------
 st.title("Quantum Circuit Visualizer")
@@ -146,4 +150,5 @@ if qc is not None:
         st.plotly_chart(fig_bloch, use_container_width=True)
 
     st.success("Visualization complete! Explore all representations interactively.")
+
 

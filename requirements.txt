@@ -1,5 +1,6 @@
 streamlit
 qiskit
+qiskit-aer
 plotly
 matplotlib
 numpy

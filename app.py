@@ -134,7 +134,7 @@ if uploaded_file is not None:
         st.header("Uploaded Quantum Circuit")
         # --- MODIFICATION START ---
         # Generate the circuit diagram as a matplotlib figure
-        fig = qc.draw(output='mpl', style='iqp') 
+        fig = qc.draw(output='mpl', style='iqp',scale=0.8) 
         # Display the figure in the Streamlit app
         st.pyplot(fig)
         # --- MODIFICATION END ---
@@ -172,3 +172,4 @@ if uploaded_file is not None:
         st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file.")
 else:
     st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
+

@@ -134,17 +134,19 @@ if uploaded_file is not None:
         st.header("Uploaded Quantum Circuit")
         # --- MODIFICATION START ---
         # Generate the circuit diagram as a matplotlib figure
+        # 1. Draw the circuit to get the matplotlib figure object
         fig = qc.draw(output='mpl', style='iqp') 
+
         # 2. Set the desired size in inches (width, height)
-        fig.set_size_inches(3,3)
-        # Display the figure in the Streamlit app
+        fig.set_size_inches(8, 3)
+
+        # 3. Display the resized figure in Streamlit
         st.pyplot(fig)
-        # --- MODIFICATION END ---
 
         # Calculate the statevector for the entire circuit
         state = statevector_from_circuit(qc)
 
-        st.header("Qubit State Analysis")
+        st.header("Qubit State Anlysis")
         st.write("Below is the analysis for each individual qubit after tracing out all others.")
 
         # Analyze and display each qubit
@@ -174,6 +176,7 @@ if uploaded_file is not None:
         st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file.")
 else:
     st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
+
 
 
 

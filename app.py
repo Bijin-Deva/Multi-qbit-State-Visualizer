@@ -139,12 +139,12 @@ if uploaded_file is not None:
         # Set your required size in inches (width, height)
         fig, ax = plt.subplots(figsize=(8, 3))
 
-       # 2. Draw the circuit directly onto the pre-sized Axes
-       # Note: We pass the 'ax=ax' argument here
-       qc.draw(output='mpl', style='iqp', ax=ax)
+        # 2. Draw the circuit directly onto the pre-sized Axes
+        # Note: We pass the 'ax=ax' argument here
+        qc.draw(output='mpl', style='iqp', ax=ax)
 
-       # 3. Display the figure in Streamlit
-       st.pyplot(fig)
+        # 3. Display the figure in Streamlit
+        st.pyplot(fig)
 
         # Calculate the statevector for the entire circuit
         state = statevector_from_circuit(qc)
@@ -179,6 +179,7 @@ if uploaded_file is not None:
         st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file.")
 else:
     st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
+
 
 
 

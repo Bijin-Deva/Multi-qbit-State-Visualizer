@@ -4,5 +4,6 @@ qiskit
 qiskit-aer
 plotly
 matplotlib
+pylatexenc
 
 

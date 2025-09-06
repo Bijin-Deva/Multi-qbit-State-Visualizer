@@ -132,7 +132,12 @@ if uploaded_file is not None:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
         st.header("Uploaded Quantum Circuit")
-        st.text(str(qc))
+        # --- MODIFICATION START ---
+        # Generate the circuit diagram as a matplotlib figure
+        fig = qc.draw(output='mpl', style='iqp') 
+        # Display the figure in the Streamlit app
+        st.pyplot(fig)
+        # --- MODIFICATION END ---
 
         # Calculate the statevector for the entire circuit
         state = statevector_from_circuit(qc)
@@ -159,8 +164,8 @@ if uploaded_file is not None:
 
             with col2:
                 # Generate and display the Bloch sphere plot
-                fig = bloch_plotly(bx, by, bz, title=f"Bloch Sphere for Qubit {i}")
-                st.plotly_chart(fig, use_container_width=True)
+                fig_bloch = bloch_plotly(bx, by, bz, title=f"Bloch Sphere for Qubit {i}")
+                st.plotly_chart(fig_bloch, use_container_width=True)
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")

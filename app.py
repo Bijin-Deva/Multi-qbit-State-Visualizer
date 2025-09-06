@@ -135,6 +135,8 @@ if uploaded_file is not None:
         # --- MODIFICATION START ---
         # Generate the circuit diagram as a matplotlib figure
         fig = qc.draw(output='mpl', style='iqp',scale=0.5) 
+        # 2. Set the desired size in inches (width, height)
+        fig.set_size_inches(8, 3)
         # Display the figure in the Streamlit app
         st.pyplot(fig)
         # --- MODIFICATION END ---
@@ -172,5 +174,6 @@ if uploaded_file is not None:
         st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file.")
 else:
     st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
+
 
 

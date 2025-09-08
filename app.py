@@ -13,6 +13,33 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
+# --- NEW: In-built QASM examples ---
+EXAMPLES = {
+    "Bell State (2 Qubits Entangled)": """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        h q[0];
+        cx q[0],q[1];
+    """,
+    "GHZ State (3 Qubits Entangled)": """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3];
+        h q[0];
+        cx q[0],q[1];
+        cx q[0],q[2];
+    """,
+    "Full Superposition (3 Qubits)": """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3];
+        h q[0];
+        h q[1];
+        h q[2];
+    """
+}
+
 # --- Pauli Matrices (Constants) ---
 SX = np.array([[0, 1], [1, 0]], dtype=complex)
 SY = np.array([[0, -1j], [1j, 0]], dtype=complex)
@@ -123,21 +150,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("⚛️ Quantum Circuit Visualizer")
-st.markdown("Upload a quantum circuit in **OpenQASM 2.0 (`.qasm`)** format to see the state of each qubit visualized on a Bloch sphere.")
+st.markdown("Choose an example or upload a **`.qasm`** file to visualize a quantum circuit.")
 
-st.sidebar.title("Circuit Upload")
-uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
+# --- UPDATED: Sidebar with example selection ---
+st.sidebar.title("Circuit Source")
+example_options = list(EXAMPLES.keys())
+choice = st.sidebar.selectbox(
+    "Choose an example or upload your own",
+    ["Select an option..."] + example_options + ["Upload my own..."]
+)
+
+qasm_text = None
+uploaded_file = None
+
+if choice in example_options:
+    qasm_text = EXAMPLES[choice]
+elif choice == "Upload my own...":
+    uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
+    if uploaded_file is not None:
+        qasm_text = io.BytesIO(uploaded_file.getvalue()).read().decode("utf-8")
 
 st.sidebar.title("Simulation Controls")
 num_shots = st.sidebar.slider('Number of Shots (for measurement)', 100, 8192, 1024)
 
-
-if uploaded_file is not None:
-    qasm_text = io.BytesIO(uploaded_file.getvalue()).read().decode("utf-8")
+# --- UPDATED: Main app logic now checks for qasm_text instead of uploaded_file ---
+if qasm_text is not None:
     try:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
-        st.header("Uploaded Quantum Circuit")
+        st.header("Quantum Circuit")
         fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
         qc.draw(output='mpl', style='iqp', ax=ax)
         st.pyplot(fig)
@@ -169,16 +210,11 @@ if uploaded_file is not None:
             st.plotly_chart(hist_fig, use_container_width=True)
 
             if counts:
-                # Find the outcome with the highest count
                 most_likely_outcome_raw = max(counts, key=counts.get)
-                
-                # --- FIX STARTS HERE ---
-                # Split the string by space and take the first part to handle multiple registers
                 final_outcome = most_likely_outcome_raw.split(" ")[0]
                 
                 st.subheader("Most Probable Outcome")
                 st.markdown(f"### `{final_outcome}`")
-                # --- FIX ENDS HERE ---
             else:
                 st.warning("No measurement outcomes were recorded.")
 
@@ -207,6 +243,6 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")
-        st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file and that your environment includes qiskit-aer (`pip install qiskit-aer`).")
+        st.warning("Please ensure the QASM is valid and that your environment includes qiskit-aer (`pip install qiskit-aer`).")
 else:
-    st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
+    st.info("Please select an example or upload a .qasm file using the sidebar to begin.")

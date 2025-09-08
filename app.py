@@ -8,7 +8,7 @@ import streamlit as st
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, partial_trace
-from qiskit_aer import Aer  # Import the Aer simulator
+from qiskit_aer import Aer
 import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
@@ -158,7 +158,6 @@ st.markdown("Upload a quantum circuit in **OpenQASM 2.0 (`.qasm`)** format to se
 st.sidebar.title("Circuit Upload")
 uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
 
-# --- NEW: Slider for number of shots ---
 st.sidebar.title("Simulation Controls")
 num_shots = st.sidebar.slider('Number of Shots (for measurement)', 100, 8192, 1024)
 
@@ -169,27 +168,22 @@ if uploaded_file is not None:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
         st.header("Uploaded Quantum Circuit")
-        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5))) # Dynamic height
+        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
         qc.draw(output='mpl', style='iqp', ax=ax)
         st.pyplot(fig)
 
-        # --- NEW: Classical Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
             st.header("Classical Measurement Outcomes")
             
-            # Create a separate circuit for measurement
             qc_measured = qc.copy()
-            # Ensure all qubits are measured for a complete result
             qc_measured.measure_all(inplace=True) 
             
             qasm_backend = Aer.get_backend('qasm_simulator')
             qasm_job = qasm_backend.run(qc_measured, shots=num_shots)
             counts = qasm_job.result().get_counts()
             
-            # Sort the counts for consistent plotting
             sorted_counts = dict(sorted(counts.items()))
 
-            # Create Plotly histogram
             hist_fig = go.Figure(go.Bar(
                 x=list(sorted_counts.keys()), 
                 y=list(sorted_counts.values()),
@@ -204,21 +198,22 @@ if uploaded_file is not None:
             )
             st.plotly_chart(hist_fig, use_container_width=True)
 
-            # Display the most probable outcome
             if counts:
                 most_likely_outcome = max(counts, key=counts.get)
-                st.metric(label="Most Probable Classical Outcome", value=most_likely_outcome)
+                # --- FIX STARTS HERE ---
+                # Replaced st.metric with st.subheader and st.markdown for clearer display
+                st.subheader("Most Probable Outcome")
+                st.markdown(f"### `{most_likely_outcome}`")
+                # --- FIX ENDS HERE ---
             else:
                 st.warning("No measurement outcomes were recorded.")
 
-        # --- Ideal Statevector Simulation (for Bloch Spheres) ---
         with st.spinner("Calculating ideal quantum states..."):
             state = statevector_from_circuit(qc)
 
             st.header("Qubit State Analysis")
             st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
 
-            # Create columns for each qubit
             cols = st.columns(qc.num_qubits)
             for i in range(qc.num_qubits):
                 with cols[i]:
@@ -226,7 +221,6 @@ if uploaded_file is not None:
                     bx, by, bz = bloch_vector_from_rho(rho)
                     p = purity_from_rho(rho)
                     
-                    # Use the new plot function
                     fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
                     st.plotly_chart(fig_bloch, use_container_width=True)
                     

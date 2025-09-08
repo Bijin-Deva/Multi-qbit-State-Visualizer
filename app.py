@@ -179,41 +179,32 @@ if uploaded_file is not None:
             qc_measured.measure_all(inplace=True) 
             
             qasm_backend = Aer.get_backend('qasm_simulator')
-            qasm_job = qasm_backend.run(qc_measured, shots=num_shots)
+            qasm_job = qasm_backend.run(qc_measured, shots=1024) 
             counts = qasm_job.result().get_counts()
             
-            sorted_counts = dict(sorted(counts.items()))
-
-            hist_fig = go.Figure(go.Bar(
-                x=list(sorted_counts.keys()), 
-                y=list(sorted_counts.values()),
-                marker_color='indianred'
-            ))
-            hist_fig.update_layout(
-                title=dict(text=f"Results from {num_shots} shots", font_color='white'),
-                xaxis_title="Outcome (Classical Bit String)",
-                yaxis_title="Counts",
-                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
-                font_color='white'
-            )
-            st.plotly_chart(hist_fig, use_container_width=True)
-
+            # --- START OF DEBUGGING SECTION ---
+            st.warning("--- DEBUG INFO START ---")
+            st.write("1. This is the raw `counts` dictionary from the simulator:")
+            st.json(counts)
+            
             if counts:
                 most_likely_outcome = max(counts, key=counts.get)
-                # --- FIX STARTS HERE ---
-                # Replaced st.metric with st.subheader and st.markdown for clearer display
+                st.write("2. This is the `most_likely_outcome` variable we calculated:")
+                st.code(most_likely_outcome, language=None)
+                
+                st.write("3. Now, we will display the final output below:")
                 st.subheader("Most Probable Outcome")
                 st.markdown(f"### `{most_likely_outcome}`")
-                # --- FIX ENDS HERE ---
             else:
                 st.warning("No measurement outcomes were recorded.")
+            
+            st.warning("--- DEBUG INFO END ---")
+            # --- END OF DEBUGGING SECTION ---
 
         with st.spinner("Calculating ideal quantum states..."):
             state = statevector_from_circuit(qc)
-
             st.header("Qubit State Analysis")
-            st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
-
+            # ... (the rest of your code for Bloch spheres is unchanged) ...
             cols = st.columns(qc.num_qubits)
             for i in range(qc.num_qubits):
                 with cols[i]:

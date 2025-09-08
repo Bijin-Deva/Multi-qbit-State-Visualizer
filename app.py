@@ -8,6 +8,7 @@ import streamlit as st
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, partial_trace
+from qiskit_aer import Aer  # Import the Aer simulator
 import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
@@ -66,7 +67,7 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     sphere_z = np.outer(np.ones_like(u), np.cos(v))
 
     fig = go.Figure()
-    
+
     # Add the semi-transparent sphere surface with a new gradient
     fig.add_trace(go.Surface(
         x=sphere_x, y=sphere_y, z=sphere_z,
@@ -157,6 +158,11 @@ st.markdown("Upload a quantum circuit in **OpenQASM 2.0 (`.qasm`)** format to se
 st.sidebar.title("Circuit Upload")
 uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
 
+# --- NEW: Slider for number of shots ---
+st.sidebar.title("Simulation Controls")
+num_shots = st.sidebar.slider('Number of Shots (for measurement)', 100, 8192, 1024)
+
+
 if uploaded_file is not None:
     qasm_text = io.BytesIO(uploaded_file.getvalue()).read().decode("utf-8")
     try:
@@ -167,33 +173,72 @@ if uploaded_file is not None:
         qc.draw(output='mpl', style='iqp', ax=ax)
         st.pyplot(fig)
 
-        state = statevector_from_circuit(qc)
+        # --- NEW: Classical Measurement Simulation ---
+        with st.spinner("Simulating measurements..."):
+            st.header("Classical Measurement Outcomes")
+            
+            # Create a separate circuit for measurement
+            qc_measured = qc.copy()
+            # Ensure all qubits are measured for a complete result
+            qc_measured.measure_all(inplace=True) 
+            
+            qasm_backend = Aer.get_backend('qasm_simulator')
+            qasm_job = qasm_backend.run(qc_measured, shots=num_shots)
+            counts = qasm_job.result().get_counts()
+            
+            # Sort the counts for consistent plotting
+            sorted_counts = dict(sorted(counts.items()))
 
-        st.header("Qubit State Analysis")
-        st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
+            # Create Plotly histogram
+            hist_fig = go.Figure(go.Bar(
+                x=list(sorted_counts.keys()), 
+                y=list(sorted_counts.values()),
+                marker_color='indianred'
+            ))
+            hist_fig.update_layout(
+                title=dict(text=f"Results from {num_shots} shots", font_color='white'),
+                xaxis_title="Outcome (Classical Bit String)",
+                yaxis_title="Counts",
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
+                font_color='white'
+            )
+            st.plotly_chart(hist_fig, use_container_width=True)
 
-        # Create columns for each qubit
-        cols = st.columns(qc.num_qubits)
-        for i in range(qc.num_qubits):
-            with cols[i]:
-                rho = reduced_density_for_qubit(state, i)
-                bx, by, bz = bloch_vector_from_rho(rho)
-                p = purity_from_rho(rho)
-                
-                # Use the new plot function
-                fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
-                st.plotly_chart(fig_bloch, use_container_width=True)
-                
-                st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
-                
-                with st.expander(f"Details for Qubit {i}"):
-                    st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
-                    st.markdown("Reduced Density Matrix:")
-                    st.dataframe(np.round(rho, 3))
+            # Display the most probable outcome
+            if counts:
+                most_likely_outcome = max(counts, key=counts.get)
+                st.metric(label="Most Probable Classical Outcome", value=most_likely_outcome)
+            else:
+                st.warning("No measurement outcomes were recorded.")
+
+        # --- Ideal Statevector Simulation (for Bloch Spheres) ---
+        with st.spinner("Calculating ideal quantum states..."):
+            state = statevector_from_circuit(qc)
+
+            st.header("Qubit State Analysis")
+            st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
+
+            # Create columns for each qubit
+            cols = st.columns(qc.num_qubits)
+            for i in range(qc.num_qubits):
+                with cols[i]:
+                    rho = reduced_density_for_qubit(state, i)
+                    bx, by, bz = bloch_vector_from_rho(rho)
+                    p = purity_from_rho(rho)
+                    
+                    # Use the new plot function
+                    fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
+                    st.plotly_chart(fig_bloch, use_container_width=True)
+                    
+                    st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
+                    
+                    with st.expander(f"Details for Qubit {i}"):
+                        st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
+                        st.markdown("Reduced Density Matrix:")
+                        st.dataframe(np.round(rho, 3))
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")
-        st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file.")
+        st.warning("Please ensure the uploaded file is a valid OpenQASM 2.0 file and that your environment includes qiskit-aer (`pip install qiskit-aer`).")
 else:
     st.info("Awaiting a .qasm file. Please upload a circuit using the sidebar.")
-

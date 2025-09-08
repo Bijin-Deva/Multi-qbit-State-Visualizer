@@ -23,10 +23,8 @@ SZ = np.array([[1, 0], [0, -1]], dtype=complex)
 def remove_final_measurements_if_any(qc: QuantumCircuit) -> QuantumCircuit:
     """Return a copy of qc without final measurements."""
     try:
-        # Modern Qiskit method
         return qc.remove_final_measurements(inplace=False)
     except Exception:
-        # Fallback for older Qiskit versions
         new_qc = QuantumCircuit(qc.num_qubits, qc.num_clbits)
         for instr, qargs, cargs in qc.data:
             if instr.name != "measure":
@@ -59,7 +57,6 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
     Generates a vibrant, interactive Bloch sphere plot with uniquely colored axes.
     """
-    # Create the sphere surface
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 50)
     sphere_x = np.outer(np.cos(u), np.sin(v))
@@ -67,21 +64,15 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     sphere_z = np.outer(np.ones_like(u), np.cos(v))
 
     fig = go.Figure()
-
-    # Add the semi-transparent sphere surface with a new gradient
     fig.add_trace(go.Surface(
         x=sphere_x, y=sphere_y, z=sphere_z,
         opacity=0.2, showscale=False,
         colorscale=[[0, 'rgb(30,30,60)'], [1, 'rgb(120,70,150)']],
-        surfacecolor=np.sqrt(sphere_x**2 + sphere_y**2) # Color by distance from Z-axis
+        surfacecolor=np.sqrt(sphere_x**2 + sphere_y**2)
     ))
-
-    # Add uniquely colored axes lines
     fig.add_trace(go.Scatter3d(x=[-1.2, 1.2], y=[0, 0], z=[0, 0], mode='lines+text', text=['', 'X'], line=dict(color='#FF6666', width=4), textfont_color='#FF6666'))
     fig.add_trace(go.Scatter3d(x=[0, 0], y=[-1.2, 1.2], z=[0, 0], mode='lines+text', text=['', 'Y'], line=dict(color='#66FF66', width=4), textfont_color='#66FF66'))
     fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-1.2, 1.2], mode='lines+text', text=['|1⟩', '|0⟩'], line=dict(color='#6666FF', width=4), textfont_color='#6666FF'))
-
-    # Add the state vector as a prominent arrow
     fig.add_trace(go.Scatter3d(
         x=[0, x], y=[0, y], z=[0, z],
         mode='lines', line=dict(color='cyan', width=8), name='State Vector'
@@ -90,8 +81,6 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
         x=[x], y=[y], z=[z],
         mode='markers', marker=dict(size=6, color='cyan', line=dict(width=2, color='white')), name='State'
     ))
-
-    # Configure layout for a clean, modern look
     fig.update_layout(
         title=dict(text=f"<b>{title}</b>", x=0.5, font=dict(color='white')),
         scene=dict(
@@ -110,51 +99,32 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
 
 st.set_page_config(page_title="Quantum Circuit Visualizer", layout="wide")
 
-# --- Apply All Custom Styling ---
 st.markdown("""
 <style>
-/* Main app background */
 .stApp {
     background-image: linear-gradient(to bottom right, #000000, #0D224F);
     background-attachment: fixed;
     background-size: cover;
 }
-/* Remove white header bar */
-[data-testid="stHeader"] {
-    background-color: transparent;
-}
-/* Main content text color fix */
+[data-testid="stHeader"] { background-color: transparent; }
 [data-testid="stAppViewContainer"] h1,
 [data-testid="stAppViewContainer"] h2,
 [data-testid="stAppViewContainer"] h3,
-[data-testid="stAppViewContainer"] .stMarkdown p {
-    color: white !important;
-}
-/* Sidebar styling */
-[data-testid="stSidebar"] {
-    background-color: #0A193D;
-}
-/* Sidebar text color fix */
+[data-testid="stAppViewContainer"] .stMarkdown p { color: white !important; }
+[data-testid="stSidebar"] { background-color: #0A193D; }
 [data-testid="stSidebar"] .stMarkdown,
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: white !important;
-}
-/* Metric (purity) styling fix */
+[data-testid="stSidebar"] h3 { color: white !important; }
 [data-testid="stMetric"] label,
-[data-testid="stMetric"] div {
-    color: white !important;
-}
+[data-testid="stMetric"] div { color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Main App ---
 st.title("⚛️ Quantum Circuit Visualizer")
 st.markdown("Upload a quantum circuit in **OpenQASM 2.0 (`.qasm`)** format to see the state of each qubit visualized on a Bloch sphere.")
 
-# Sidebar for file upload
 st.sidebar.title("Circuit Upload")
 uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
 
@@ -179,32 +149,45 @@ if uploaded_file is not None:
             qc_measured.measure_all(inplace=True) 
             
             qasm_backend = Aer.get_backend('qasm_simulator')
-            qasm_job = qasm_backend.run(qc_measured, shots=1024) 
+            qasm_job = qasm_backend.run(qc_measured, shots=num_shots)
             counts = qasm_job.result().get_counts()
             
-            # --- START OF DEBUGGING SECTION ---
-            st.warning("--- DEBUG INFO START ---")
-            st.write("1. This is the raw `counts` dictionary from the simulator:")
-            st.json(counts)
-            
+            sorted_counts = dict(sorted(counts.items()))
+
+            hist_fig = go.Figure(go.Bar(
+                x=list(sorted_counts.keys()), 
+                y=list(sorted_counts.values()),
+                marker_color='indianred'
+            ))
+            hist_fig.update_layout(
+                title=dict(text=f"Results from {num_shots} shots", font_color='white'),
+                xaxis_title="Outcome (Classical Bit String)",
+                yaxis_title="Counts",
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
+                font_color='white'
+            )
+            st.plotly_chart(hist_fig, use_container_width=True)
+
             if counts:
-                most_likely_outcome = max(counts, key=counts.get)
-                st.write("2. This is the `most_likely_outcome` variable we calculated:")
-                st.code(most_likely_outcome, language=None)
+                # Find the outcome with the highest count
+                most_likely_outcome_raw = max(counts, key=counts.get)
                 
-                st.write("3. Now, we will display the final output below:")
+                # --- FIX STARTS HERE ---
+                # Clean the string by removing any spaces
+                final_outcome = most_likely_outcome_raw.replace(" ", "")
+                
                 st.subheader("Most Probable Outcome")
-                st.markdown(f"### `{most_likely_outcome}`")
+                st.markdown(f"### `{final_outcome}`")
+                # --- FIX ENDS HERE ---
             else:
                 st.warning("No measurement outcomes were recorded.")
-            
-            st.warning("--- DEBUG INFO END ---")
-            # --- END OF DEBUGGING SECTION ---
 
         with st.spinner("Calculating ideal quantum states..."):
             state = statevector_from_circuit(qc)
+
             st.header("Qubit State Analysis")
-            # ... (the rest of your code for Bloch spheres is unchanged) ...
+            st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
+
             cols = st.columns(qc.num_qubits)
             for i in range(qc.num_qubits):
                 with cols[i]:

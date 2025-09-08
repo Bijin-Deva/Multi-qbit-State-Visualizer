@@ -173,8 +173,8 @@ if uploaded_file is not None:
                 most_likely_outcome_raw = max(counts, key=counts.get)
                 
                 # --- FIX STARTS HERE ---
-                # Clean the string by removing any spaces
-                final_outcome = most_likely_outcome_raw.replace(" ", "")
+                # Split the string by space and take the first part to handle multiple registers
+                final_outcome = most_likely_outcome_raw.split(" ")[0]
                 
                 st.subheader("Most Probable Outcome")
                 st.markdown(f"### `{final_outcome}`")

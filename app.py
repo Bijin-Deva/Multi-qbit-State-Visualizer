@@ -13,9 +13,9 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
-# --- Updated QASM examples with measurements ---
+# --- UPDATED: In-built QASM examples with corrected "Full Superposition" ---
 EXAMPLES = {
-    "Bell State (Entanglement)": """
+    "Bell State (2 Qubits Entangled)": """
         OPENQASM 2.0;
         include "qelib1.inc";
         qreg q[2];
@@ -24,7 +24,7 @@ EXAMPLES = {
         cx q[0],q[1];
         measure q -> c;
     """,
-    "GHZ State (3-Qubit Entanglement)": """
+    "GHZ State (3 Qubits Entangled)": """
         OPENQASM 2.0;
         include "qelib1.inc";
         qreg q[3];
@@ -43,6 +43,14 @@ EXAMPLES = {
         h q[1];
         h q[2];
         measure q -> c;
+    """,
+    "Single Qubit (Hadamard & Measure)": """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[1];
+        creg c[1];
+        h q[0];
+        measure q[0] -> c[0];
     """
 }
 
@@ -81,7 +89,7 @@ def purity_from_rho(rho2x2: np.ndarray):
     """Calculates the purity of the state from its density matrix."""
     return float(np.real(np.trace(rho2x2 @ rho2x2)))
 
-# --- Updated Visualization Function ---
+# --- Visualization Function ---
 
 def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
@@ -191,14 +199,17 @@ if qasm_text is not None:
             "linecolor": "#AAAAAA",
             "textcolor": "white",
             "labelcolor": "white",
-            "fontsize": 10,
+            "fontsize": 9, # Slightly smaller for more compactness
+            "creg_labelfontsize": 10,
+            "qreg_labelfontsize": 10,
             "dpi": 200,
-            "margin": [0.1, 0.01, 0.01, 0.05]
+            "margin": [0.12, 0.02, 0.01, 0.05] # Adjusted margins [left, bottom, right, top]
         }
         
         # Dynamically calculate figure size based on circuit dimensions
-        fig_width = max(8, qc.depth() * 0.7)
-        fig_height = max(3, qc.num_qubits * 0.5)
+        # Starting with a smaller base width and height for compactness
+        fig_width = max(5, qc.depth() * 0.5) # Minimum width 5, scales with depth
+        fig_height = max(2.0, qc.num_qubits * 0.4) # Minimum height 2, scales with num_qubits
 
         fig, ax = plt.subplots(figsize=(fig_width, fig_height))
         fig.patch.set_alpha(0.0)
@@ -209,8 +220,8 @@ if qasm_text is not None:
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.7,  # Add horizontal space between gates
-            fold=25     # Wrap the circuit if it gets too wide
+            scale=0.6,  # Further reduce horizontal space between gates for compactness
+            fold=20     # Adjust fold to wrap more frequently if needed, or set to -1 to disable
         )
         st.pyplot(fig)
 
@@ -222,6 +233,7 @@ if qasm_text is not None:
             
             # Add measurements for simulation if they aren't already in the circuit
             if qc.num_clbits == 0 and qc.num_qubits > 0:
+                st.info("No classical registers found in QASM. Adding measurements to all qubits for simulation.")
                 qc_for_measurement.measure_all(inplace=True)
 
             if qc_for_measurement.num_clbits > 0:
@@ -250,7 +262,7 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
             else:
-                 st.info("Circuit contains no qubits to measure.")
+                 st.info("Circuit contains no classical registers for measurement outcomes.")
 
         # --- Ideal Quantum State Analysis ---
         with st.spinner("Calculating ideal quantum states..."):

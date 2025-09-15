@@ -184,21 +184,20 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
-        # This style dictionary is extremely explicit to force visibility on older library versions.
         custom_style = {
             "textcolor": "#FFFFFF",
             "gatetextcolor": "#FFFFFF",
             "labelcolor": "#FFFFFF",
             "linecolor": "#FFFFFF",
             "creglinecolor": "#FFFFFF",
-            "gatefacecolor": "#3B5998", # Default gate color
+            "gatefacecolor": "#3B5998",
             "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
             "displaycolor": {
-                'h': '#33b1ff',      # Light Blue for Hadamard
-                'cx': '#33b1ff',     # Light Blue for CNOT
-                'x': '#ff6666',      # Red for X gate
-                'measure': '#808080',# Grey for measure
+                'h': '#33b1ff',
+                'cx': '#33b1ff',
+                'x': '#ff6666',
+                'measure': '#808080',
             },
             "dpi": 200,
         }
@@ -208,16 +207,23 @@ if qasm_text is not None:
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
 
-        # Draw the circuit, passing the explicit axis
+        # --- NEW: Hide the plot frame (spines) to remove the white bar ---
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        
+        # Remove axis ticks
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Draw the circuit
         qc.draw(
             output='mpl',
             style=custom_style,
             ax=ax,
             scale=0.7
         )
-
-        # Manually adjust subplot parameters to guarantee space for labels
-        fig.subplots_adjust(left=0.2, right=0.9, top=0.9, bottom=0.1)
 
         st.pyplot(fig)
 

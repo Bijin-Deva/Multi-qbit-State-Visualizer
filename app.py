@@ -228,14 +228,17 @@ if qasm_text is not None:
             "creg_textalign": "left"
         }
 
+        # ######################################################################
+        # # --- CODE REPLACED AS REQUESTED (AND CORRECTED) ---
+        # ######################################################################
+        
         # Create a figure with a predictable size and transparent background
         fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
-
         ax.axis('off')
 
-        # Draw the circuit on the now-blank canvas
+        # Draw the circuit using the corrected variable 'qc' and necessary styling
         qc.draw(
             output='mpl',
             style=custom_style,
@@ -244,7 +247,12 @@ if qasm_text is not None:
             initial_state=True
         )
 
+        # This Streamlit command displays the Matplotlib figure in the app
         st.pyplot(fig)
+        
+        # ######################################################################
+        # # --- END OF REPLACEMENT ---
+        # ######################################################################
 
 
         # --- Measurement Simulation ---
@@ -328,4 +336,3 @@ if qasm_text is not None:
         st.warning("Please ensure the QASM is valid and that your environment includes qiskit-aer (`pip install qiskit-aer`).")
 else:
     st.info("Please select an example or upload a .qasm file using the sidebar to begin.")
-

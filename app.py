@@ -197,16 +197,15 @@ if qasm_text is not None:
             "gatefacecolor": "#3B5998",
             "gatetextcolor": "white",
             "linecolor": "#AAAAAA",
-            "textcolor": "white",      # Color for text on gates (e.g., H, X)
-            "labelcolor": "white",       # Color for qubit labels (q_0, q_1)
-            "creg_labelfontsize": 11,    # Specific font size for classical register labels
-            "qreg_labelfontsize": 11,    # Specific font size for quantum register labels
-            "fontsize": 9,               # General font size
+            "textcolor": "white",
+            "labelcolor": "white",
+            "creg_labelfontsize": 11,
+            "qreg_labelfontsize": 11,
+            "fontsize": 9,
             "dpi": 200,
-            "margin": 0.08               # Add more margin for labels on the left
+            "margin": [0.1, 0.01, 0.01, 0.05]  # [left, bottom, right, top]
         }
         # Create the figure and make its background transparent
-        # Ensure minimum height for figsize to prevent crowding, adjust based on num_qubits
         fig, ax = plt.subplots(figsize=(6, max(2.0, qc.num_qubits * 0.45)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)

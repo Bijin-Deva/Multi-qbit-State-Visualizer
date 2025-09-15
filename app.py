@@ -13,30 +13,36 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
-# --- NEW: In-built QASM examples ---
+# --- Updated QASM examples with measurements ---
 EXAMPLES = {
-    "Bell State (2 Qubits Entangled)": """
+    "Bell State (Entanglement)": """
         OPENQASM 2.0;
         include "qelib1.inc";
         qreg q[2];
+        creg c[2];
         h q[0];
         cx q[0],q[1];
+        measure q -> c;
     """,
-    "GHZ State (3 Qubits Entangled)": """
+    "GHZ State (3-Qubit Entanglement)": """
         OPENQASM 2.0;
         include "qelib1.inc";
         qreg q[3];
+        creg c[3];
         h q[0];
         cx q[0],q[1];
         cx q[0],q[2];
+        measure q -> c;
     """,
     "Full Superposition (3 Qubits)": """
         OPENQASM 2.0;
         include "qelib1.inc";
         qreg q[3];
+        creg c[3];
         h q[0];
         h q[1];
         h q[2];
+        measure q -> c;
     """
 }
 
@@ -49,14 +55,11 @@ SZ = np.array([[1, 0], [0, -1]], dtype=complex)
 
 def remove_final_measurements_if_any(qc: QuantumCircuit) -> QuantumCircuit:
     """Return a copy of qc without final measurements."""
-    try:
-        return qc.remove_final_measurements(inplace=False)
-    except Exception:
-        new_qc = QuantumCircuit(qc.num_qubits, qc.num_clbits)
-        for instr, qargs, cargs in qc.data:
-            if instr.name != "measure":
-                new_qc.append(instr, qargs, cargs)
-        return new_qc
+    new_qc = QuantumCircuit(qc.num_qubits, qc.num_clbits)
+    for instr, qargs, cargs in qc.data:
+        if instr.name != "measure":
+            new_qc.append(instr, qargs, cargs)
+    return new_qc
 
 def statevector_from_circuit(qc: QuantumCircuit) -> Statevector:
     """Calculates the statevector from a quantum circuit."""
@@ -152,7 +155,7 @@ st.markdown("""
 st.title("⚛️ Quantum Circuit Visualizer")
 st.markdown("Choose an example or upload a **`.qasm`** file to visualize a quantum circuit.")
 
-# --- UPDATED: Sidebar with example selection ---
+# --- Sidebar with example selection ---
 st.sidebar.title("Circuit Source")
 example_options = list(EXAMPLES.keys())
 choice = st.sidebar.selectbox(
@@ -173,73 +176,109 @@ elif choice == "Upload my own...":
 st.sidebar.title("Simulation Controls")
 num_shots = st.sidebar.slider('Number of Shots (for measurement)', 100, 8192, 1024)
 
-# --- UPDATED: Main app logic now checks for qasm_text instead of uploaded_file ---
+# --- Main app logic ---
 if qasm_text is not None:
     try:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
         st.header("Quantum Circuit")
-        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
-        qc.draw(output='mpl', style='iqp', ax=ax)
+        st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
+        
+        # --- NEW: Enhanced Drawing with Custom Styling for Clarity ---
+        custom_style = {
+            "gatefacecolor": "#3B5998",
+            "gatetextcolor": "white",
+            "linecolor": "#AAAAAA",
+            "textcolor": "white",
+            "labelcolor": "white",
+            "fontsize": 10,
+            "dpi": 200,
+            "margin": [0.1, 0.01, 0.01, 0.05]
+        }
+        
+        # Dynamically calculate figure size based on circuit dimensions
+        fig_width = max(8, qc.depth() * 0.7)
+        fig_height = max(3, qc.num_qubits * 0.5)
+
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        fig.patch.set_alpha(0.0)
+        ax.patch.set_alpha(0.0)
+
+        # Draw the circuit with improved layout parameters
+        qc.draw(
+            output='mpl',
+            style=custom_style,
+            ax=ax,
+            scale=0.7,  # Add horizontal space between gates
+            fold=25     # Wrap the circuit if it gets too wide
+        )
         st.pyplot(fig)
 
+        # --- Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
             st.header("Classical Measurement Outcomes")
             
-            qc_measured = qc.copy()
-            qc_measured.measure_all(inplace=True) 
+            qc_for_measurement = qc.copy()
             
-            qasm_backend = Aer.get_backend('qasm_simulator')
-            qasm_job = qasm_backend.run(qc_measured, shots=num_shots)
-            counts = qasm_job.result().get_counts()
-            
-            sorted_counts = dict(sorted(counts.items()))
+            # Add measurements for simulation if they aren't already in the circuit
+            if qc.num_clbits == 0 and qc.num_qubits > 0:
+                qc_for_measurement.measure_all(inplace=True)
 
-            hist_fig = go.Figure(go.Bar(
-                x=list(sorted_counts.keys()), 
-                y=list(sorted_counts.values()),
-                marker_color='indianred'
-            ))
-            hist_fig.update_layout(
-                title=dict(text=f"Results from {num_shots} shots", font_color='white'),
-                xaxis_title="Outcome (Classical Bit String)",
-                yaxis_title="Counts",
-                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
-                font_color='white'
-            )
-            st.plotly_chart(hist_fig, use_container_width=True)
-
-            if counts:
-                most_likely_outcome_raw = max(counts, key=counts.get)
-                final_outcome = most_likely_outcome_raw.split(" ")[0]
+            if qc_for_measurement.num_clbits > 0:
+                qasm_backend = Aer.get_backend('qasm_simulator')
+                qasm_job = qasm_backend.run(qc_for_measurement, shots=num_shots)
+                counts = qasm_job.result().get_counts()
                 
-                st.subheader("Most Probable Outcome")
-                st.markdown(f"### `{final_outcome}`")
-            else:
-                st.warning("No measurement outcomes were recorded.")
+                sorted_counts = dict(sorted(counts.items()))
 
+                hist_fig = go.Figure(go.Bar(
+                    x=list(sorted_counts.keys()), 
+                    y=list(sorted_counts.values()),
+                    marker_color='indianred'
+                ))
+                hist_fig.update_layout(
+                    title=dict(text=f"Results from {num_shots} shots", font_color='white'),
+                    xaxis_title="Outcome (Classical Bit String)",
+                    yaxis_title="Counts",
+                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
+                    font_color='white'
+                )
+                st.plotly_chart(hist_fig, use_container_width=True)
+
+                if counts:
+                    most_likely_outcome = max(counts, key=counts.get)
+                    st.subheader("Most Probable Outcome")
+                    st.markdown(f"### `{most_likely_outcome}`")
+            else:
+                 st.info("Circuit contains no qubits to measure.")
+
+        # --- Ideal Quantum State Analysis ---
         with st.spinner("Calculating ideal quantum states..."):
             state = statevector_from_circuit(qc)
 
             st.header("Qubit State Analysis")
             st.markdown("Below is the analysis for each individual qubit after tracing out all others.")
 
-            cols = st.columns(qc.num_qubits)
-            for i in range(qc.num_qubits):
-                with cols[i]:
-                    rho = reduced_density_for_qubit(state, i)
-                    bx, by, bz = bloch_vector_from_rho(rho)
-                    p = purity_from_rho(rho)
-                    
-                    fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
-                    st.plotly_chart(fig_bloch, use_container_width=True)
-                    
-                    st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
-                    
-                    with st.expander(f"Details for Qubit {i}"):
-                        st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
-                        st.markdown("Reduced Density Matrix:")
-                        st.dataframe(np.round(rho, 3))
+            if qc.num_qubits > 0:
+                cols = st.columns(qc.num_qubits)
+                for i in range(qc.num_qubits):
+                    with cols[i]:
+                        rho = reduced_density_for_qubit(state, i)
+                        bx, by, bz = bloch_vector_from_rho(rho)
+                        p = purity_from_rho(rho)
+                        
+                        fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
+                        st.plotly_chart(fig_bloch, use_container_width=True)
+                        
+                        st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
+                        
+                        with st.expander(f"Details for Qubit {i}"):
+                            st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
+                            st.markdown("Reduced Density Matrix:")
+                            st.dataframe(np.round(rho, 3))
+            else:
+                st.info("No qubits in the circuit to analyze.")
+
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")

@@ -13,38 +13,59 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
-# --- UPDATED: In-built QASM examples ---
+# --- UPDATED: Examples now include a 'note' for the UI ---
 EXAMPLES = {
-    "Bell State (2 Qubits Entangled)": """
-        OPENQASM 2.0;
-        include "qelib1.inc";
-        qreg q[2];
-        creg c[2];
-        h q[0];
-        cx q[0],q[1];
-        measure q -> c;
-    """,
-    "GHZ State (3 Qubits Entangled)": """
-        OPENQASM 2.0;
-        include "qelib1.inc";
-        qreg q[3];
-        creg c[3];
-        h q[0];
-        cx q[0],q[1];
-        cx q[0],q[2];
-        measure q -> c;
-    """,
-    "Full Superposition (3 Qubits)": """
-        OPENQASM 2.0;
-        include "qelib1.inc";
-        qreg q[3];
-        creg c[3];
-        h q[0];
-        h q[1];
-        h q[2];
-        measure q -> c;
-    """
+    "Bell State (Entanglement)": {
+        "qasm": """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[2];
+            creg c[2];
+            h q[0];
+            cx q[0],q[1];
+            measure q -> c;
+        """,
+        "note": """
+        **Circuit Explanation:** This circuit creates a Bell state, a fundamental example of quantum entanglement.
+        The Hadamard gate puts the first qubit in a superposition. The CNOT gate then entangles the second qubit with the first.
+        Because of this entanglement, the measurement outcomes of the two qubits are perfectly correlated. You will only ever measure **`00`** or **`11`**, each with roughly 50% probability.
+        """
+    },
+    "GHZ State (3-Qubit Entanglement)": {
+        "qasm": """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[3];
+            creg c[3];
+            h q[0];
+            cx q[0],q[1];
+            cx q[0],q[2];
+            measure q -> c;
+        """,
+        "note": """
+        **Circuit Explanation:** The Greenberger–Horne–Zeilinger (GHZ) state is an entangled state of three qubits.
+        The first qubit is put into a superposition, and then CNOT gates are used to entangle the other two qubits with it.
+        The result is that all three qubits are linked. You will only ever measure **`000`** or **`111`**, each with roughly 50% probability.
+        """
+    },
+    "Full Superposition (3 Qubits)": {
+        "qasm": """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[3];
+            creg c[3];
+            h q[0];
+            h q[1];
+            h q[2];
+            measure q -> c;
+        """,
+        "note": """
+        **Circuit Explanation:** Applying a Hadamard (H) gate to every qubit puts the entire system into an equal superposition of all possible basis states.
+        For 3 qubits, there are $2^3 = 8$ possible outcomes (from `000` to `111`). When you measure the circuit, each of these 8 outcomes has an equal probability of occurring.
+        """
+    }
 }
+
 
 # --- Pauli Matrices (Constants) ---
 SX = np.array([[0, 1], [1, 0]], dtype=complex)
@@ -149,6 +170,7 @@ st.markdown("""
 [data-testid="stSidebar"] h3 { color: white !important; }
 [data-testid="stMetric"] label,
 [data-testid="stMetric"] div { color: white !important; }
+[data-testid="stInfo"] { background-color: rgba(0, 100, 200, 0.2); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -164,10 +186,11 @@ choice = st.sidebar.selectbox(
 )
 
 qasm_text = None
-uploaded_file = None
+note_text = None # Variable to hold the note for an example
 
 if choice in example_options:
-    qasm_text = EXAMPLES[choice]
+    qasm_text = EXAMPLES[choice]["qasm"]
+    note_text = EXAMPLES[choice]["note"]
 elif choice == "Upload my own...":
     uploaded_file = st.sidebar.file_uploader("Choose a .qasm file", type="qasm")
     if uploaded_file is not None:
@@ -185,11 +208,11 @@ if qasm_text is not None:
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
         custom_style = {
-            "textcolor": "#FFFFFF",
-            "gatetextcolor": "#FFFFFF",
-            "labelcolor": "#FFFFFF",
-            "linecolor": "#FFFFFF",
-            "creglinecolor": "#FFFFFF",
+            "textcolor": "white",
+            "gatetextcolor": "white",
+            "labelcolor": "white",
+            "linecolor": "white",
+            "creglinecolor": "white",
             "gatefacecolor": "#3B5998",
             "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
@@ -200,27 +223,25 @@ if qasm_text is not None:
                 'measure': '#808080',
             },
             "dpi": 200,
-            "margin": [0.25, 0.1, 0.1, 0.1],
-            # --- NEW: Force text alignment to prevent labels from being drawn off-screen ---
-            "qreg_textalign": "left",
-            "creg_textalign": "left"
         }
 
-        # Create a figure with a predictable size and transparent background
-        fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
+        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
 
-        ax.axis('off')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
 
-        # Draw the circuit on the now-blank canvas
+        ax.set_xticks([])
+        ax.set_yticks([])
+
         qc.draw(
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.7,
-            # --- NEW: Force drawing of initial state as a backup for labels ---
-            initial_state=True
+            scale=0.7
         )
 
         st.pyplot(fig)
@@ -261,6 +282,17 @@ if qasm_text is not None:
                     most_likely_outcome = max(counts, key=counts.get)
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
+
+                    # --- NEW: Add a general note about how to read the output string ---
+                    if qc.num_qubits > 0:
+                        # Generate the qubit order string, e.g., "q2q1q0" for 3 qubits
+                        readout_order = "".join([f"q{i}" for i in range(qc.num_qubits - 1, -1, -1)])
+                        st.info(f"💡 **How to Read the Output:** The bit string corresponds to the qubits in the order **`{readout_order}`**.")
+
+                    # Display the specific note for the selected example, if it exists
+                    if note_text:
+                        st.markdown(note_text)
+
             else:
                  st.info("Circuit contains no classical registers for measurement outcomes.")
 

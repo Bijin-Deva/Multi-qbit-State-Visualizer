@@ -193,7 +193,8 @@ if qasm_text is not None:
         # --- Display the circuit diagram (will now show measurement gates) ---
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
-        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
+        # Adjust figsize and dpi for a smaller, clearer image
+        fig, ax = plt.subplots(figsize=(7, max(1.5, qc.num_qubits * 0.4)), dpi=150) # Smaller figsize, higher dpi
         qc.draw(output='mpl', style='iqp', ax=ax)
         st.pyplot(fig)
 
@@ -204,8 +205,8 @@ if qasm_text is not None:
             qc_for_measurement = qc.copy()
             
             # If the circuit doesn't define any classical bits, add them for a full measurement.
-            if qc_for_measurement.num_clbits == 0:
-                st.info("No classical registers found in QASM. Adding measurements to all qubits for simulation.")
+            if qc_for_measurement.num_clbits == 0 and qc_for_measurement.num_qubits > 0: # Only add if there are qubits to measure
+                st.info("No classical registers or explicit measurements found in QASM. Adding measurements to all qubits for simulation.")
                 qc_for_measurement.measure_all(inplace=True)
 
             # Only run the simulator if there are classical bits to measure into.
@@ -235,7 +236,7 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
             else:
-                st.warning("Circuit has no measurement operations. No outcomes to display.")
+                st.warning("Circuit has no measurement operations and no classical registers to hold results. No outcomes to display.")
 
         # --- Ideal Quantum State Analysis ---
         with st.spinner("Calculating ideal quantum states..."):

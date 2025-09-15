@@ -192,18 +192,22 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
         
-        # Define a custom style dictionary to ensure all text is visible
+        # Define a custom style dictionary to ensure all text is visible and layout is better
         custom_style = {
             "gatefacecolor": "#3B5998",
             "gatetextcolor": "white",
             "linecolor": "#AAAAAA",
-            "textcolor": "white",      # Color for text on gates
+            "textcolor": "white",      # Color for text on gates (e.g., H, X)
             "labelcolor": "white",       # Color for qubit labels (q_0, q_1)
-            "fontsize": 9,
-            "dpi": 200
+            "creg_labelfontsize": 11,    # Specific font size for classical register labels
+            "qreg_labelfontsize": 11,    # Specific font size for quantum register labels
+            "fontsize": 9,               # General font size
+            "dpi": 200,
+            "margin": 0.08               # Add more margin for labels on the left
         }
         # Create the figure and make its background transparent
-        fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)))
+        # Ensure minimum height for figsize to prevent crowding, adjust based on num_qubits
+        fig, ax = plt.subplots(figsize=(6, max(2.0, qc.num_qubits * 0.45)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
 

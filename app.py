@@ -192,16 +192,17 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
         
-        # Define a custom style dictionary compatible with older Matplotlib
+        # Define a custom style dictionary to ensure all text is visible
         custom_style = {
             "gatefacecolor": "#3B5998",
             "gatetextcolor": "white",
             "linecolor": "#AAAAAA",
-            "textcolor": "white",
+            "textcolor": "white",      # Color for text on gates
+            "labelcolor": "white",       # Color for qubit labels (q_0, q_1)
             "fontsize": 9,
             "dpi": 200
         }
-        # Create the figure and make its background transparent in a compatible way
+        # Create the figure and make its background transparent
         fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
@@ -256,7 +257,6 @@ if qasm_text is not None:
             st.header("Qubit State Analysis")
             st.markdown("Below is the analysis for each individual qubit's state *before* measurement, calculated by tracing out all other qubits.")
 
-            # Only show Bloch spheres if there are qubits in the circuit
             if qc.num_qubits > 0:
                 cols = st.columns(qc.num_qubits)
                 for i in range(qc.num_qubits):

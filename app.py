@@ -184,6 +184,13 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
+        # --- NOTE: Enhanced Circuit Drawing ---
+        # The following section uses a highly customized method to draw the quantum circuit.
+        # This is necessary to ensure the diagram is clear, looks good with the dark theme,
+        # and is compatible with older versions of Qiskit and Matplotlib that have
+        # issues with text alignment and colors. The 'custom_style' dictionary explicitly
+        # defines colors and fonts, and 'ax.axis('off')' removes the plot frame to
+        # ensure the qubit labels are visible.
         custom_style = {
             "textcolor": "#FFFFFF",
             "gatetextcolor": "#FFFFFF",
@@ -201,7 +208,6 @@ if qasm_text is not None:
             },
             "dpi": 200,
             "margin": [0.25, 0.1, 0.1, 0.1],
-            # --- NEW: Force text alignment to prevent labels from being drawn off-screen ---
             "qreg_textalign": "left",
             "creg_textalign": "left"
         }
@@ -219,7 +225,6 @@ if qasm_text is not None:
             style=custom_style,
             ax=ax,
             scale=0.7,
-            # --- NEW: Force drawing of initial state as a backup for labels ---
             initial_state=True
         )
 
@@ -262,7 +267,7 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
             else:
-                 st.info("Circuit contains no classical registers for measurement outcomes.")
+               st.info("Circuit contains no classical registers for measurement outcomes.")
 
         # --- Ideal Quantum State Analysis ---
         with st.spinner("Calculating ideal quantum states..."):

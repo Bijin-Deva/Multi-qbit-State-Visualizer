@@ -171,6 +171,10 @@ st.markdown("""
 [data-testid="stMetric"] label,
 [data-testid="stMetric"] div { color: white !important; }
 [data-testid="stInfo"] { background-color: rgba(0, 100, 200, 0.2); }
+[data-testid="stExpander"] summary {
+    color: #87CEEB !important;
+    font-weight: bold;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -228,17 +232,11 @@ if qasm_text is not None:
             "creg_textalign": "left"
         }
 
-        # ######################################################################
-        # # --- CODE REPLACED AS REQUESTED (AND CORRECTED) ---
-        # ######################################################################
-        
-        # Create a figure with a predictable size and transparent background
         fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
         ax.axis('off')
-
-        # Draw the circuit using the corrected variable 'qc' and necessary styling
+        
         qc.draw(
             output='mpl',
             style=custom_style,
@@ -246,14 +244,7 @@ if qasm_text is not None:
             scale=0.7,
             initial_state=True
         )
-
-        # This Streamlit command displays the Matplotlib figure in the app
         st.pyplot(fig)
-        
-        # ######################################################################
-        # # --- END OF REPLACEMENT ---
-        # ######################################################################
-
 
         # --- Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
@@ -269,7 +260,6 @@ if qasm_text is not None:
                 qasm_backend = Aer.get_backend('qasm_simulator')
                 qasm_job = qasm_backend.run(qc_for_measurement, shots=num_shots)
                 counts = qasm_job.result().get_counts()
-
                 sorted_counts = dict(sorted(counts.items()))
 
                 hist_fig = go.Figure(go.Bar(
@@ -291,13 +281,17 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
 
-                    # --- ADDED: General note about how to read the output string ---
+                    # ##################################################
+                    # # --- NEW: Added Expander for Raw Counts ---
+                    # ##################################################
+                    with st.expander("Show Raw Counts"):
+                        st.json(sorted_counts)
+                    # ##################################################
+
                     if qc.num_qubits > 0:
-                        # Dynamically generate the qubit order string, e.g., "q2q1q0" for 3 qubits
                         readout_order = "".join([f"q{i}" for i in range(qc.num_qubits - 1, -1, -1)])
                         st.info(f"💡 **How to Read the Output:** The bit string `{most_likely_outcome}` corresponds to the qubits in the order **`{readout_order}`** (most significant bit on the left).")
 
-                    # Display the specific note for the selected example, if it exists
                     if note_text:
                         st.markdown(note_text)
 

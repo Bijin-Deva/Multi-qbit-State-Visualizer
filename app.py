@@ -200,16 +200,17 @@ if qasm_text is not None:
                 'measure': '#808080',
             },
             "dpi": 200,
-            "margin": [0.25, 0.1, 0.1, 0.1]
+            "margin": [0.25, 0.1, 0.1, 0.1],
+            # --- NEW: Force text alignment to prevent labels from being drawn off-screen ---
+            "qreg_textalign": "left",
+            "creg_textalign": "left"
         }
 
         # Create a figure with a predictable size and transparent background
         fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
-        
-        # --- NEW: Forcefully turn off the entire axis frame ---
-        # This is the strongest way to remove any borders, ticks, or spines.
+
         ax.axis('off')
 
         # Draw the circuit on the now-blank canvas
@@ -217,7 +218,9 @@ if qasm_text is not None:
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.7
+            scale=0.7,
+            # --- NEW: Force drawing of initial state as a backup for labels ---
+            initial_state=True
         )
 
         st.pyplot(fig)

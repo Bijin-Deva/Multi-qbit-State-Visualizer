@@ -183,37 +183,48 @@ if qasm_text is not None:
 
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
-        
-        # --- NEW: Simplified and more effective drawing logic ---
+
+        # --- NEW: Final robust drawing logic ---
+        # A comprehensive style dictionary to force correct colors and fonts
         custom_style = {
-            "gatefacecolor": "#3B5998",
-            "gatetextcolor": "white",
-            "linecolor": "#AAAAAA",
             "textcolor": "white",
+            "gatetextcolor": "white",
             "labelcolor": "white",
-            "fontsize": 8,  # Smaller font for compact look
-            "creg_labelfontsize": 9,
-            "qreg_labelfontsize": 9,
-            "dpi": 300,  # High DPI for sharpness
-            "margin": [0.15, 0.02, 0.01, 0.05]
+            "linecolor": "#AAAAAA",
+            "fontsize": 9,
+            "creg_labelfontsize": 10,
+            "qreg_labelfontsize": 10,
+            "margin": [0.15, 0.02, 0.02, 0.05],
+            "dpi": 300,
+            "displaycolor": {
+                'h': '#33b1ff',      # Light Blue for Hadamard
+                'cx': '#33b1ff',     # Light Blue for CNOT
+                'x': '#ff6666',      # Red for X gate
+                'measure': '#808080',# Grey for measure
+            },
+            "gatefacecolor": "#3B5998" # Default for other gates
         }
-        
-        # Let Qiskit auto-size the figure, then scale it down for a compact view
-        fig = qc.draw(
+
+        # Dynamically calculate a compact figure size
+        fig_width = max(6, qc.depth() * 0.6)
+        fig_height = max(2.5, qc.num_qubits * 0.5)
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        fig.patch.set_alpha(0.0)
+        ax.patch.set_alpha(0.0)
+
+        # Draw the circuit
+        qc.draw(
             output='mpl',
             style=custom_style,
-            scale=0.5,  # Scale the entire drawing down
-            fold=-1     # Disable folding for compact circuits
+            ax=ax,
+            scale=0.6,
+            fold=-1
         )
-        
-        # Ensure the figure background is transparent
-        fig.patch.set_alpha(0.0)
-        for ax in fig.get_axes():
-            ax.patch.set_alpha(0.0)
 
-        # Display the plot in Streamlit, cropping away all extra whitespace
-        st.pyplot(fig, bbox_inches='tight', pad_inches=0.1)
+        # Use tight_layout to ensure all labels are visible without being cut off
+        fig.tight_layout(pad=1.2)
 
+        st.pyplot(fig)
 
         # --- Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
@@ -279,7 +290,6 @@ if qasm_text is not None:
                             st.dataframe(np.round(rho, 3))
             else:
                 st.info("No qubits in the circuit to analyze.")
-
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")

@@ -184,7 +184,6 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
-        # --- NEW: Final "bulletproof" drawing logic ---
         # This style dictionary is extremely explicit to force visibility on older library versions.
         custom_style = {
             "textcolor": "#FFFFFF",
@@ -194,7 +193,6 @@ if qasm_text is not None:
             "creglinecolor": "#FFFFFF",
             "gatefacecolor": "#3B5998", # Default gate color
             "barrierfacecolor": "#AAAAAA",
-            "backgroundcolor": "rgba(0,0,0,0)",
             "fontsize": 10,
             "displaycolor": {
                 'h': '#33b1ff',      # Light Blue for Hadamard

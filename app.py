@@ -189,13 +189,26 @@ if qasm_text is not None:
     try:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
-        # --- Display the circuit diagram ---
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
         
-        # Create a more compact, higher-resolution figure and reduce the font size
-        fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)), dpi=200)
-        qc.draw(output='mpl', style='iqp', ax=ax, fontsize=9)
+        # Define a custom style dictionary for backward compatibility
+        custom_style = {
+            "backgroundcolor": "transparent", # Match app background
+            "gatefacecolor": "#3B5998",      # A nice blue for gates
+            "gatetextcolor": "white",
+            "linecolor": "#AAAAAA",          # Lighter grey lines
+            "textcolor": "white",
+            "fontsize": 9,                   # The smaller font size
+            "dpi": 200                       # High resolution
+        }
+        # Create the figure, making it's background transparent
+        fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)))
+        fig.patch.set_alpha(0.0)
+        ax.patch.set_alpha(0.0)
+
+        # Draw the circuit using the new custom style
+        qc.draw(output='mpl', style=custom_style, ax=ax)
         
         st.pyplot(fig)
 

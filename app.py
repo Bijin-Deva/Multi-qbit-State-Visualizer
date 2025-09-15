@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
-# --- NEW: Updated QASM examples with measurements and custom states ---
+# --- QASM examples with measurements and custom states ---
 EXAMPLES = {
     "Bell State (Entanglement)": """
         OPENQASM 2.0;
@@ -89,11 +89,11 @@ def purity_from_rho(rho2x2: np.ndarray):
     """Calculates the purity of the state from its density matrix."""
     return float(np.real(np.trace(rho2x2 @ rho2x2)))
 
-# --- Updated Visualization Function ---
+# --- Visualization Function ---
 
 def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
-    Generates a vibrant, interactive Bloch sphere plot with uniquely colored axes.
+    Generates an interactive Bloch sphere plot.
     """
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 50)
@@ -192,17 +192,16 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
         
-        # Define a custom style dictionary for backward compatibility
+        # Define a custom style dictionary compatible with older Matplotlib
         custom_style = {
-            "backgroundcolor": "transparent", # Match app background
-            "gatefacecolor": "#3B5998",      # A nice blue for gates
+            "gatefacecolor": "#3B5998",
             "gatetextcolor": "white",
-            "linecolor": "#AAAAAA",          # Lighter grey lines
+            "linecolor": "#AAAAAA",
             "textcolor": "white",
-            "fontsize": 9,                   # The smaller font size
-            "dpi": 200                       # High resolution
+            "fontsize": 9,
+            "dpi": 200
         }
-        # Create the figure, making it's background transparent
+        # Create the figure and make its background transparent in a compatible way
         fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
@@ -257,22 +256,27 @@ if qasm_text is not None:
             st.header("Qubit State Analysis")
             st.markdown("Below is the analysis for each individual qubit's state *before* measurement, calculated by tracing out all other qubits.")
 
-            cols = st.columns(qc.num_qubits)
-            for i in range(qc.num_qubits):
-                with cols[i]:
-                    rho = reduced_density_for_qubit(state, i)
-                    bx, by, bz = bloch_vector_from_rho(rho)
-                    p = purity_from_rho(rho)
-                    
-                    fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
-                    st.plotly_chart(fig_bloch, use_container_width=True)
-                    
-                    st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
-                    
-                    with st.expander(f"Details for Qubit {i}"):
-                        st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
-                        st.markdown("Reduced Density Matrix:")
-                        st.dataframe(np.round(rho, 3))
+            # Only show Bloch spheres if there are qubits in the circuit
+            if qc.num_qubits > 0:
+                cols = st.columns(qc.num_qubits)
+                for i in range(qc.num_qubits):
+                    with cols[i]:
+                        rho = reduced_density_for_qubit(state, i)
+                        bx, by, bz = bloch_vector_from_rho(rho)
+                        p = purity_from_rho(rho)
+                        
+                        fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
+                        st.plotly_chart(fig_bloch, use_container_width=True)
+                        
+                        st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
+                        
+                        with st.expander(f"Details for Qubit {i}"):
+                            st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
+                            st.markdown("Reduced Density Matrix:")
+                            st.dataframe(np.round(rho, 3))
+            else:
+                st.info("No qubits in the circuit to analyze.")
+
 
     except Exception as e:
         st.error(f"An error occurred while processing the QASM file: {e}")

@@ -208,11 +208,11 @@ if qasm_text is not None:
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
         custom_style = {
-            "textcolor": "white",
-            "gatetextcolor": "white",
-            "labelcolor": "white",
-            "linecolor": "white",
-            "creglinecolor": "white",
+            "textcolor": "#FFFFFF",
+            "gatetextcolor": "#FFFFFF",
+            "labelcolor": "#FFFFFF",
+            "linecolor": "#FFFFFF",
+            "creglinecolor": "#FFFFFF",
             "gatefacecolor": "#3B5998",
             "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
@@ -223,25 +223,25 @@ if qasm_text is not None:
                 'measure': '#808080',
             },
             "dpi": 200,
+            "margin": [0.25, 0.1, 0.1, 0.1],
+            "qreg_textalign": "left",
+            "creg_textalign": "left"
         }
 
-        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
+        # Create a figure with a predictable size and transparent background
+        fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
 
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
+        ax.axis('off')
 
-        ax.set_xticks([])
-        ax.set_yticks([])
-
+        # Draw the circuit on the now-blank canvas
         qc.draw(
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.7
+            scale=0.7,
+            initial_state=True
         )
 
         st.pyplot(fig)
@@ -283,11 +283,11 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
 
-                    # --- NEW: Add a general note about how to read the output string ---
+                    # --- ADDED: General note about how to read the output string ---
                     if qc.num_qubits > 0:
-                        # Generate the qubit order string, e.g., "q2q1q0" for 3 qubits
+                        # Dynamically generate the qubit order string, e.g., "q2q1q0" for 3 qubits
                         readout_order = "".join([f"q{i}" for i in range(qc.num_qubits - 1, -1, -1)])
-                        st.info(f"💡 **How to Read the Output:** The bit string corresponds to the qubits in the order **`{readout_order}`**.")
+                        st.info(f"💡 **How to Read the Output:** The bit string `{most_likely_outcome}` corresponds to the qubits in the order **`{readout_order}`** (most significant bit on the left).")
 
                     # Display the specific note for the selected example, if it exists
                     if note_text:

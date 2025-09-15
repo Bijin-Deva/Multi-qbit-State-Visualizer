@@ -184,14 +184,14 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
-        # A robust style dictionary for clear, dark-themed plots
         custom_style = {
-            "textcolor": "white",
-            "gatetextcolor": "white",
-            "labelcolor": "white",
+            "textcolor": "#FFFFFF",
+            "gatetextcolor": "#FFFFFF",
+            "labelcolor": "#FFFFFF",
             "linecolor": "#FFFFFF",
             "creglinecolor": "#FFFFFF",
             "gatefacecolor": "#3B5998",
+            "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
             "displaycolor": {
                 'h': '#33b1ff',
@@ -199,21 +199,29 @@ if qasm_text is not None:
                 'x': '#ff6666',
                 'measure': '#808080',
             },
-            "dpi": 300,
-            # Provide a generous left margin for the qubit labels
-            "margin": [0.2, 0.0, 0.0, 0.0]  # [left, bottom, right, top]
+            "dpi": 200,
+            "margin": [0.25, 0.1, 0.1, 0.1],
+            # --- NEW: Force text alignment to prevent labels from being drawn off-screen ---
+            "qreg_textalign": "left",
+            "creg_textalign": "left"
         }
 
-        # Let Qiskit create and manage the figure for better alignment.
-        # The 'scale' parameter controls the final size.
-        fig = qc.draw(
+        # Create a figure with a predictable size and transparent background
+        fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
+        fig.patch.set_alpha(0.0)
+        ax.patch.set_alpha(0.0)
+
+        ax.axis('off')
+
+        # Draw the circuit on the now-blank canvas
+        qc.draw(
             output='mpl',
             style=custom_style,
-            scale=0.7  # Adjust this value to make the image smaller or larger
+            ax=ax,
+            scale=0.7,
+            # --- NEW: Force drawing of initial state as a backup for labels ---
+            initial_state=True
         )
-
-        # Set the background of the figure that Qiskit created to be transparent
-        fig.patch.set_alpha(0.0)
 
         st.pyplot(fig)
 

@@ -201,7 +201,6 @@ if qasm_text is not None:
             },
             "dpi": 200,
             "margin": [0.25, 0.1, 0.1, 0.1],
-            # --- NEW: Force text alignment to prevent labels from being drawn off-screen ---
             "qreg_textalign": "left",
             "creg_textalign": "left"
         }
@@ -218,9 +217,8 @@ if qasm_text is not None:
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.7,
-            # --- NEW: Force drawing of initial state as a backup for labels ---
-            initial_state=True
+            scale=0.7
+            # initial_state=True has been removed to show register names
         )
 
         st.pyplot(fig)

@@ -200,24 +200,19 @@ if qasm_text is not None:
                 'measure': '#808080',
             },
             "dpi": 200,
+            "margin": [0.25, 0.1, 0.1, 0.1]
         }
 
         # Create a figure with a predictable size and transparent background
-        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
+        fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
-
-        # --- NEW: Hide the plot frame (spines) to remove the white bar ---
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
         
-        # Remove axis ticks
-        ax.set_xticks([])
-        ax.set_yticks([])
+        # --- NEW: Forcefully turn off the entire axis frame ---
+        # This is the strongest way to remove any borders, ticks, or spines.
+        ax.axis('off')
 
-        # Draw the circuit
+        # Draw the circuit on the now-blank canvas
         qc.draw(
             output='mpl',
             style=custom_style,

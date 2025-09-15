@@ -184,54 +184,52 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
-        # --- NEW: Final robust drawing logic ---
-        # A comprehensive style dictionary to force correct colors and fonts
+        # --- NEW: Final "bulletproof" drawing logic ---
+        # This style dictionary is extremely explicit to force visibility on older library versions.
         custom_style = {
-            "textcolor": "white",
-            "gatetextcolor": "white",
-            "labelcolor": "white",
-            "linecolor": "#AAAAAA",
-            "fontsize": 9,
-            "creg_labelfontsize": 10,
-            "qreg_labelfontsize": 10,
-            "margin": [0.15, 0.02, 0.02, 0.05],
-            "dpi": 300,
+            "textcolor": "#FFFFFF",
+            "gatetextcolor": "#FFFFFF",
+            "labelcolor": "#FFFFFF",
+            "linecolor": "#FFFFFF",
+            "creglinecolor": "#FFFFFF",
+            "gatefacecolor": "#3B5998", # Default gate color
+            "barrierfacecolor": "#AAAAAA",
+            "backgroundcolor": "rgba(0,0,0,0)",
+            "fontsize": 10,
             "displaycolor": {
                 'h': '#33b1ff',      # Light Blue for Hadamard
                 'cx': '#33b1ff',     # Light Blue for CNOT
                 'x': '#ff6666',      # Red for X gate
                 'measure': '#808080',# Grey for measure
             },
-            "gatefacecolor": "#3B5998" # Default for other gates
+            "dpi": 200,
         }
 
-        # Dynamically calculate a compact figure size
-        fig_width = max(6, qc.depth() * 0.6)
-        fig_height = max(2.5, qc.num_qubits * 0.5)
-        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        # Create a figure with a predictable size and transparent background
+        fig, ax = plt.subplots(figsize=(8, max(2, qc.num_qubits * 0.5)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
 
-        # Draw the circuit
+        # Draw the circuit, passing the explicit axis
         qc.draw(
             output='mpl',
             style=custom_style,
             ax=ax,
-            scale=0.6,
-            fold=-1
+            scale=0.7
         )
 
-        # Use tight_layout to ensure all labels are visible without being cut off
-        fig.tight_layout(pad=1.2)
+        # Manually adjust subplot parameters to guarantee space for labels
+        fig.subplots_adjust(left=0.2, right=0.9, top=0.9, bottom=0.1)
 
         st.pyplot(fig)
+
 
         # --- Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
             st.header("Classical Measurement Outcomes")
-            
+
             qc_for_measurement = qc.copy()
-            
+
             if qc_for_measurement.num_clbits == 0 and qc_for_measurement.num_qubits > 0:
                 st.info("No classical registers found in QASM. Adding measurements to all qubits for simulation.")
                 qc_for_measurement.measure_all(inplace=True)
@@ -240,11 +238,11 @@ if qasm_text is not None:
                 qasm_backend = Aer.get_backend('qasm_simulator')
                 qasm_job = qasm_backend.run(qc_for_measurement, shots=num_shots)
                 counts = qasm_job.result().get_counts()
-                
+
                 sorted_counts = dict(sorted(counts.items()))
 
                 hist_fig = go.Figure(go.Bar(
-                    x=list(sorted_counts.keys()), 
+                    x=list(sorted_counts.keys()),
                     y=list(sorted_counts.values()),
                     marker_color='indianred'
                 ))
@@ -278,12 +276,12 @@ if qasm_text is not None:
                         rho = reduced_density_for_qubit(state, i)
                         bx, by, bz = bloch_vector_from_rho(rho)
                         p = purity_from_rho(rho)
-                        
+
                         fig_bloch = plot_bloch_sphere(bx, by, bz, title=f"Qubit {i}")
                         st.plotly_chart(fig_bloch, use_container_width=True)
-                        
+
                         st.metric(label=f"Purity (Qubit {i})", value=f"{p:.4f}")
-                        
+
                         with st.expander(f"Details for Qubit {i}"):
                             st.markdown(f"**Bloch Vector:** `({bx:.3f}, {by:.3f}, {bz:.3f})`")
                             st.markdown("Reduced Density Matrix:")

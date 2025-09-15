@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
 
-# --- UPDATED: In-built QASM examples with corrected "Full Superposition" ---
+# --- UPDATED: In-built QASM examples ---
 EXAMPLES = {
     "Bell State (2 Qubits Entangled)": """
         OPENQASM 2.0;
@@ -43,14 +43,6 @@ EXAMPLES = {
         h q[1];
         h q[2];
         measure q -> c;
-    """,
-    "Single Qubit (Hadamard & Measure)": """
-        OPENQASM 2.0;
-        include "qelib1.inc";
-        qreg q[1];
-        creg c[1];
-        h q[0];
-        measure q[0] -> c[0];
     """
 }
 
@@ -93,7 +85,7 @@ def purity_from_rho(rho2x2: np.ndarray):
 
 def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
-    Generates a vibrant, interactive Bloch sphere plot with uniquely colored axes.
+    Generates a vibrant, interactive Bloch sphere plot.
     """
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 50)
@@ -192,38 +184,36 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
         
-        # --- NEW: Enhanced Drawing with Custom Styling for Clarity ---
+        # --- NEW: Simplified and more effective drawing logic ---
         custom_style = {
             "gatefacecolor": "#3B5998",
             "gatetextcolor": "white",
             "linecolor": "#AAAAAA",
             "textcolor": "white",
             "labelcolor": "white",
-            "fontsize": 9, # Slightly smaller for more compactness
-            "creg_labelfontsize": 10,
-            "qreg_labelfontsize": 10,
-            "dpi": 200,
-            "margin": [0.12, 0.02, 0.01, 0.05] # Adjusted margins [left, bottom, right, top]
+            "fontsize": 8,  # Smaller font for compact look
+            "creg_labelfontsize": 9,
+            "qreg_labelfontsize": 9,
+            "dpi": 300,  # High DPI for sharpness
+            "margin": [0.15, 0.02, 0.01, 0.05]
         }
         
-        # Dynamically calculate figure size based on circuit dimensions
-        # Starting with a smaller base width and height for compactness
-        fig_width = max(5, qc.depth() * 0.5) # Minimum width 5, scales with depth
-        fig_height = max(2.0, qc.num_qubits * 0.4) # Minimum height 2, scales with num_qubits
-
-        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-        fig.patch.set_alpha(0.0)
-        ax.patch.set_alpha(0.0)
-
-        # Draw the circuit with improved layout parameters
-        qc.draw(
+        # Let Qiskit auto-size the figure, then scale it down for a compact view
+        fig = qc.draw(
             output='mpl',
             style=custom_style,
-            ax=ax,
-            scale=0.6,  # Further reduce horizontal space between gates for compactness
-            fold=20     # Adjust fold to wrap more frequently if needed, or set to -1 to disable
+            scale=0.5,  # Scale the entire drawing down
+            fold=-1     # Disable folding for compact circuits
         )
-        st.pyplot(fig)
+        
+        # Ensure the figure background is transparent
+        fig.patch.set_alpha(0.0)
+        for ax in fig.get_axes():
+            ax.patch.set_alpha(0.0)
+
+        # Display the plot in Streamlit, cropping away all extra whitespace
+        st.pyplot(fig, bbox_inches='tight', pad_inches=0.1)
+
 
         # --- Measurement Simulation ---
         with st.spinner("Simulating measurements..."):
@@ -231,8 +221,7 @@ if qasm_text is not None:
             
             qc_for_measurement = qc.copy()
             
-            # Add measurements for simulation if they aren't already in the circuit
-            if qc.num_clbits == 0 and qc.num_qubits > 0:
+            if qc_for_measurement.num_clbits == 0 and qc_for_measurement.num_qubits > 0:
                 st.info("No classical registers found in QASM. Adding measurements to all qubits for simulation.")
                 qc_for_measurement.measure_all(inplace=True)
 

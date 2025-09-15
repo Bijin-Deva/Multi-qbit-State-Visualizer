@@ -184,11 +184,14 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
+        # A robust style dictionary for clear, dark-themed plots
         custom_style = {
-            "gatefacecolor": "#3B5998",
+            "textcolor": "white",
             "gatetextcolor": "white",
-            "linecolor": "white",
-            "creglinecolor": "white",
+            "labelcolor": "white",
+            "linecolor": "#FFFFFF",
+            "creglinecolor": "#FFFFFF",
+            "gatefacecolor": "#3B5998",
             "fontsize": 10,
             "displaycolor": {
                 'h': '#33b1ff',
@@ -196,31 +199,21 @@ if qasm_text is not None:
                 'x': '#ff6666',
                 'measure': '#808080',
             },
-            "dpi": 200,
+            "dpi": 300,
+            # Provide a generous left margin for the qubit labels
+            "margin": [0.2, 0.0, 0.0, 0.0]  # [left, bottom, right, top]
         }
 
-        # Create a figure with a predictable size and transparent background
-        fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
+        # Let Qiskit create and manage the figure for better alignment.
+        # The 'scale' parameter controls the final size.
+        fig = qc.draw(
+            output='mpl',
+            style=custom_style,
+            scale=0.7  # Adjust this value to make the image smaller or larger
+        )
+
+        # Set the background of the figure that Qiskit created to be transparent
         fig.patch.set_alpha(0.0)
-        ax.patch.set_alpha(0.0)
-        ax.axis('off')
-
-        # Draw the circuit. We will draw the labels ourselves.
-        qc.draw(output='mpl', style=custom_style, ax=ax, scale=0.7)
-
-        # --- MANUAL OVERRIDE: Draw the labels ourselves to bypass the qiskit bug ---
-        num_qubits = qc.num_qubits
-        # Y-coordinates for qubits in the plot are integers from 0 (bottom) to num_qubits-1 (top).
-        # We place the text just to the left of the circuit's start line.
-        x_pos = -0.5
-        for i in range(num_qubits):
-            # Qiskit's drawer places q_0 at the top, which corresponds to y = num_qubits - 1.
-            y_pos = (num_qubits - 1) - i
-            ax.text(x_pos, y_pos, f'$q_{i}$:', ha='right', va='center', color='white', fontsize=12)
-
-        # Manually expand the plot limits to ensure our new labels are visible.
-        ax.set_xlim(x_pos - 0.5, qc.depth() + 1)
-        ax.set_ylim(-1, num_qubits)
 
         st.pyplot(fig)
 

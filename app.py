@@ -63,7 +63,6 @@ SZ = np.array([[1, 0], [0, -1]], dtype=complex)
 
 def remove_final_measurements_if_any(qc: QuantumCircuit) -> QuantumCircuit:
     """Return a copy of qc without final measurements for statevector analysis."""
-    # This function is crucial for calculating the statevector *before* collapse.
     new_qc = QuantumCircuit(qc.num_qubits, qc.num_clbits)
     for instr, qargs, cargs in qc.data:
         if instr.name != "measure":
@@ -185,17 +184,19 @@ elif choice == "Upload my own...":
 st.sidebar.title("Simulation Controls")
 num_shots = st.sidebar.slider('Number of Shots (for measurement)', 100, 8192, 1024)
 
-# --- UPDATED: Main application logic with smarter measurement handling ---
+# --- Main application logic ---
 if qasm_text is not None:
     try:
         qc = QuantumCircuit.from_qasm_str(qasm_text)
 
-        # --- Display the circuit diagram (will now show measurement gates) ---
+        # --- Display the circuit diagram ---
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
-        # Adjust figsize and dpi for a smaller, clearer image
-        fig, ax = plt.subplots(figsize=(7, max(1.5, qc.num_qubits * 0.4)), dpi=150) # Smaller figsize, higher dpi
-        qc.draw(output='mpl', style='iqp', ax=ax)
+        
+        # Create a more compact, higher-resolution figure and reduce the font size
+        fig, ax = plt.subplots(figsize=(6, max(1.5, qc.num_qubits * 0.35)), dpi=200)
+        qc.draw(output='mpl', style='iqp', ax=ax, fontsize=9)
+        
         st.pyplot(fig)
 
         # --- Measurement Simulation ---
@@ -204,12 +205,10 @@ if qasm_text is not None:
             
             qc_for_measurement = qc.copy()
             
-            # If the circuit doesn't define any classical bits, add them for a full measurement.
-            if qc_for_measurement.num_clbits == 0 and qc_for_measurement.num_qubits > 0: # Only add if there are qubits to measure
-                st.info("No classical registers or explicit measurements found in QASM. Adding measurements to all qubits for simulation.")
+            if qc_for_measurement.num_clbits == 0 and qc_for_measurement.num_qubits > 0:
+                st.info("No classical registers found in QASM. Adding measurements to all qubits for simulation.")
                 qc_for_measurement.measure_all(inplace=True)
 
-            # Only run the simulator if there are classical bits to measure into.
             if qc_for_measurement.num_clbits > 0:
                 qasm_backend = Aer.get_backend('qasm_simulator')
                 qasm_job = qasm_backend.run(qc_for_measurement, shots=num_shots)
@@ -236,11 +235,10 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
             else:
-                st.warning("Circuit has no measurement operations and no classical registers to hold results. No outcomes to display.")
+                st.warning("Circuit has no measurement operations. No outcomes to display.")
 
         # --- Ideal Quantum State Analysis ---
         with st.spinner("Calculating ideal quantum states..."):
-            # The statevector_from_circuit function correctly removes measurements for this part.
             state = statevector_from_circuit(qc)
 
             st.header("Qubit State Analysis")

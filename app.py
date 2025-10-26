@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 A Streamlit web application for visualizing quantum circuits from .qasm files,
-updated with a modern, dark-themed interface and enhanced visualizations.
+updated with a modern, light-themed (cream/yellow) interface and enhanced visualizations.
 """
 
 import streamlit as st
@@ -106,7 +106,7 @@ def purity_from_rho(rho2x2: np.ndarray):
 
 def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
-    Generates a vibrant, interactive Bloch sphere plot.
+    Generates an interactive Bloch sphere plot, styled for a light theme.
     """
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 50)
@@ -117,8 +117,8 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Surface(
         x=sphere_x, y=sphere_y, z=sphere_z,
-        opacity=0.2, showscale=False,
-        colorscale=[[0, 'rgb(30,30,60)'], [1, 'rgb(120,70,150)']],
+        opacity=0.1, showscale=False,
+        colorscale='Greys', # <<< CHANGED
         surfacecolor=np.sqrt(sphere_x**2 + sphere_y**2)
     ))
     fig.add_trace(go.Scatter3d(x=[-1.2, 1.2], y=[0, 0], z=[0, 0], mode='lines+text', text=['', 'X'], line=dict(color='#FF6666', width=4), textfont_color='#FF6666'))
@@ -126,14 +126,14 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-1.2, 1.2], mode='lines+text', text=['|1⟩', '|0⟩'], line=dict(color='#6666FF', width=4), textfont_color='#6666FF'))
     fig.add_trace(go.Scatter3d(
         x=[0, x], y=[0, y], z=[0, z],
-        mode='lines', line=dict(color='cyan', width=8), name='State Vector'
+        mode='lines', line=dict(color='blue', width=8), name='State Vector' # <<< CHANGED
     ))
     fig.add_trace(go.Scatter3d(
         x=[x], y=[y], z=[z],
-        mode='markers', marker=dict(size=6, color='cyan', line=dict(width=2, color='white')), name='State'
+        mode='markers', marker=dict(size=6, color='blue', line=dict(width=2, color='black')), name='State' # <<< CHANGED
     ))
     fig.update_layout(
-        title=dict(text=f"<b>{title}</b>", x=0.5, font=dict(color='white')),
+        title=dict(text=f"<b>{title}</b>", x=0.5, font=dict(color='#333333')), # <<< CHANGED
         scene=dict(
             xaxis=dict(showticklabels=False, visible=False, range=[-1.5, 1.5]),
             yaxis=dict(showticklabels=False, visible=False, range=[-1.5, 1.5]),
@@ -150,10 +150,13 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
 
 st.set_page_config(page_title="Quantum Circuit Visualizer", layout="wide")
 
+# ##################################################
+# # --- CSS STYLES UPDATED FOR LIGHT THEME ---
+# ##################################################
 st.markdown("""
 <style>
 .stApp {
-    background-image: linear-gradient(to bottom right, #000000, #0D224F);
+    background-color: #FFFBEA; /* <<< CHANGED: Pale Yellow/Cream Background */
     background-attachment: fixed;
     background-size: cover;
 }
@@ -161,22 +164,23 @@ st.markdown("""
 [data-testid="stAppViewContainer"] h1,
 [data-testid="stAppViewContainer"] h2,
 [data-testid="stAppViewContainer"] h3,
-[data-testid="stAppViewContainer"] .stMarkdown p { color: white !important; }
-[data-testid="stSidebar"] { background-color: #0A193D; }
+[data-testid="stAppViewContainer"] .stMarkdown p { color: #333333 !important; } /* <<< CHANGED: Dark text */
+[data-testid="stSidebar"] { background-color: #FAF0E6; } /* <<< CHANGED: Light cream/linen sidebar */
 [data-testid="stSidebar"] .stMarkdown,
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 { color: white !important; }
+[data-testid="stSidebar"] h3 { color: #333333 !important; } /* <<< CHANGED: Dark text */
 [data-testid="stMetric"] label,
-[data-testid="stMetric"] div { color: white !important; }
-[data-testid="stInfo"] { background-color: rgba(0, 100, 200, 0.2); }
+[data-testid="stMetric"] div { color: #333333 !important; } /* <<< CHANGED: Dark text */
+[data-testid="stInfo"] { background-color: rgba(240, 230, 140, 0.3); } /* <<< CHANGED: Light yellow info box */
 [data-testid="stExpander"] summary {
-    color: #87CEEB !important;
+    color: #004E98 !important; /* <<< CHANGED: Dark readable blue */
     font-weight: bold;
 }
 </style>
 """, unsafe_allow_html=True)
+# ##################################################
 
 st.title("⚛️ Quantum Circuit Visualizer")
 st.markdown("Choose an example or upload a **`.qasm`** file to visualize a quantum circuit.")
@@ -211,19 +215,22 @@ if qasm_text is not None:
         st.header("Quantum Circuit")
         st.markdown("This diagram shows the gates and measurements as defined in the QASM file.")
 
+        # ##################################################
+        # # --- MATPLOTLIB STYLE UPDATED FOR LIGHT THEME ---
+        # ##################################################
         custom_style = {
-            "textcolor": "#FFFFFF",
-            "gatetextcolor": "#FFFFFF",
-            "labelcolor": "#FFFFFF",
-            "linecolor": "#FFFFFF",
-            "creglinecolor": "#FFFFFF",
-            "gatefacecolor": "#3B5998",
+            "textcolor": "#333333",       # <<< CHANGED
+            "gatetextcolor": "#000000",      # <<< CHANGED
+            "labelcolor": "#333333",        # <<< CHANGED
+            "linecolor": "#888888",         # <<< CHANGED
+            "creglinecolor": "#888888",      # <<< CHANGED
+            "gatefacecolor": "#ADD8E6",     # <<< CHANGED (Light Blue)
             "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
             "displaycolor": {
-                'h': '#33b1ff',
-                'cx': '#33b1ff',
-                'x': '#ff6666',
+                'h': '#87CEEB',         # <<< CHANGED (Sky Blue)
+                'cx': '#87CEEB',        # <<< CHANGED (Sky Blue)
+                'x': '#F08080',         # <<< CHANGED (Light Coral)
                 'measure': '#808080',
             },
             "dpi": 200,
@@ -231,12 +238,13 @@ if qasm_text is not None:
             "qreg_textalign": "left",
             "creg_textalign": "left"
         }
+        # ##################################################
 
         fig, ax = plt.subplots(figsize=(8, max(2.5, qc.num_qubits * 0.6)))
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
         ax.axis('off')
-        
+
         qc.draw(
             output='mpl',
             style=custom_style,
@@ -267,13 +275,20 @@ if qasm_text is not None:
                     y=list(sorted_counts.values()),
                     marker_color='indianred'
                 ))
+                
+                # ##################################################
+                # # --- HISTOGRAM STYLE UPDATED FOR LIGHT THEME ---
+                # ##################################################
                 hist_fig.update_layout(
-                    title=dict(text=f"Results from {num_shots} shots", font_color='white'),
+                    title=dict(text=f"Results from {num_shots} shots", font_color='#333333'), # <<< CHANGED
                     xaxis_title="Outcome (Classical Bit String)",
                     yaxis_title="Counts",
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0.2)',
-                    font_color='white'
+                    paper_bgcolor='rgba(0,0,0,0)', 
+                    plot_bgcolor='rgba(230, 230, 230, 0.2)', # <<< CHANGED
+                    font_color='#333333' # <<< CHANGED
                 )
+                # ##################################################
+                
                 st.plotly_chart(hist_fig, use_container_width=True)
 
                 if counts:
@@ -281,12 +296,8 @@ if qasm_text is not None:
                     st.subheader("Most Probable Outcome")
                     st.markdown(f"### `{most_likely_outcome}`")
 
-                    # ##################################################
-                    # # --- NEW: Added Expander for Raw Counts ---
-                    # ##################################################
                     with st.expander("Show Raw Counts"):
                         st.json(sorted_counts)
-                    # ##################################################
 
                     if qc.num_qubits > 0:
                         readout_order = "".join([f"q{i}" for i in range(qc.num_qubits - 1, -1, -1)])

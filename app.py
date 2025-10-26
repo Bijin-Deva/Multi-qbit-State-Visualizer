@@ -104,10 +104,15 @@ def purity_from_rho(rho2x2: np.ndarray):
 
 # --- Visualization Function ---
 
+# ##################################################
+# # --- UPDATED: plot_bloch_sphere FUNCTION ---
+# ##################################################
 def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     """
-    Generates an interactive Bloch sphere plot, styled for a light theme.
+    Generates an interactive Bloch sphere plot, styled for a light theme
+    and mimicking the appearance of Image 2.
     """
+    # Create the sphere mesh
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 50)
     sphere_x = np.outer(np.cos(u), np.sin(v))
@@ -115,36 +120,108 @@ def plot_bloch_sphere(x: float, y: float, z: float, title: str) -> go.Figure:
     sphere_z = np.outer(np.ones_like(u), np.cos(v))
 
     fig = go.Figure()
+
+    # Add the translucent sphere surface
     fig.add_trace(go.Surface(
         x=sphere_x, y=sphere_y, z=sphere_z,
-        opacity=0.1, showscale=False,
-        colorscale='Greys', # <<< CHANGED
-        surfacecolor=np.sqrt(sphere_x**2 + sphere_y**2)
+        opacity=0.15, # Slightly more opaque
+        showscale=False,
+        colorscale='Greys', # Keep it subtle
+        surfacecolor=np.sqrt(sphere_x**2 + sphere_y**2), # For shading
+        lighting=dict(ambient=0.8, diffuse=0.1, specular=0.1) # Add some lighting
     ))
-    fig.add_trace(go.Scatter3d(x=[-1.2, 1.2], y=[0, 0], z=[0, 0], mode='lines+text', text=['', 'X'], line=dict(color='#FF6666', width=4), textfont_color='#FF6666'))
-    fig.add_trace(go.Scatter3d(x=[0, 0], y=[-1.2, 1.2], z=[0, 0], mode='lines+text', text=['', 'Y'], line=dict(color='#66FF66', width=4), textfont_color='#66FF66'))
-    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-1.2, 1.2], mode='lines+text', text=['|1⟩', '|0⟩'], line=dict(color='#6666FF', width=4), textfont_color='#6666FF'))
+
+    # Add grid lines (parallels and meridians)
+    # Meridians (constant u, varying v)
+    for i in range(0, 360, 30): # Every 30 degrees longitude
+        u_grid = np.deg2rad(i)
+        grid_x = np.cos(u_grid) * np.sin(v)
+        grid_y = np.sin(u_grid) * np.sin(v)
+        grid_z = np.cos(v)
+        fig.add_trace(go.Scatter3d(
+            x=grid_x, y=grid_y, z=grid_z,
+            mode='lines', line=dict(color='lightgrey', width=1), showlegend=False
+        ))
+    # Parallels (constant v, varying u)
+    for i in range(0, 180, 30): # Every 30 degrees latitude
+        v_grid = np.deg2rad(i)
+        grid_x = np.cos(u) * np.sin(v_grid)
+        grid_y = np.sin(u) * np.sin(v_grid)
+        grid_z = np.cos(v_grid) * np.ones_like(u)
+        fig.add_trace(go.Scatter3d(
+            x=grid_x, y=grid_y, z=grid_z,
+            mode='lines', line=dict(color='lightgrey', width=1), showlegend=False
+        ))
+
+    # Add axes with labels at the ends
+    axis_length = 1.2 # Slightly extend beyond sphere radius 1
+    axis_color = 'darkgrey'
+    label_font_color = '#333333' # Dark text for light theme
+
+    fig.add_trace(go.Scatter3d(x=[-axis_length, axis_length], y=[0, 0], z=[0, 0], mode='lines', line=dict(color=axis_color, width=2), showlegend=False))
+    fig.add_trace(go.Scatter3d(x=[axis_length], y=[0], z=[0], mode='text', text=['X'], textfont=dict(color=label_font_color, size=14), showlegend=False))
+
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[-axis_length, axis_length], z=[0, 0], mode='lines', line=dict(color=axis_color, width=2), showlegend=False))
+    fig.add_trace(go.Scatter3d(x=[0], y=[axis_length], z=[0], mode='text', text=['Y'], textfont=dict(color=label_font_color, size=14), showlegend=False))
+
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-axis_length, axis_length], mode='lines', line=dict(color=axis_color, width=2), showlegend=False))
+    fig.add_trace(go.Scatter3d(x=[0], y=[0], z=[axis_length], mode='text', text=['|0⟩'], textfont=dict(color=label_font_color, size=14), showlegend=False))
+    fig.add_trace(go.Scatter3d(x=[0], y=[0], z=[-axis_length], mode='text', text=['|1⟩'], textfont=dict(color=label_font_color, size=14), showlegend=False))
+
+
+    # Add the state vector as an arrow (using cone for arrowhead)
+    # The 'pink' color from Image 2
+    arrow_color = '#FF1493' # Deep Pink
+    
+    # Vector line
     fig.add_trace(go.Scatter3d(
         x=[0, x], y=[0, y], z=[0, z],
-        mode='lines', line=dict(color='blue', width=8), name='State Vector' # <<< CHANGED
+        mode='lines', line=dict(color=arrow_color, width=6),
+        name='State Vector', showlegend=False
     ))
-    fig.add_trace(go.Scatter3d(
-        x=[x], y=[y], z=[z],
-        mode='markers', marker=dict(size=6, color='blue', line=dict(width=2, color='black')), name='State' # <<< CHANGED
-    ))
+    # Arrowhead (using cone for a pointy end)
+    # Adjust cone parameters to make it look good
+    cone_size = 0.1 # size of the cone
+    cone_height_ratio = 1.5 # height relative to size
+    
+    # Calculate the end point for the cone base slightly before the vector tip
+    # This prevents the cone from appearing inside the sphere if the vector is short
+    if (x**2 + y**2 + z**2) > 0.01: # Only draw cone if vector has some length
+        vector_magnitude = np.sqrt(x**2 + y**2 + z**2)
+        if vector_magnitude > 0:
+            unit_x, unit_y, unit_z = x/vector_magnitude, y/vector_magnitude, z/vector_magnitude
+            # Position the base of the cone slightly back from the tip
+            cone_base_x = x - unit_x * cone_size / cone_height_ratio
+            cone_base_y = y - unit_y * cone_size / cone_height_ratio
+            cone_base_z = z - unit_z * cone_size / cone_height_ratio
+
+            fig.add_trace(go.Cone(
+                x=[x], y=[y], z=[z],
+                u=[unit_x], v=[unit_y], w=[unit_z],
+                sizemode="absolute", sizeref=cone_size, anchor="tip", # Anchor at tip
+                showscale=False,
+                colorscale=[[0, arrow_color], [1, arrow_color]],
+                showlegend=False
+            ))
+
+    # Update layout for a clean, white-like background and proper aspect ratio
     fig.update_layout(
-        title=dict(text=f"<b>{title}</b>", x=0.5, font=dict(color='#333333')), # <<< CHANGED
+        title=dict(text=f"<b>{title}</b>", x=0.5, font=dict(color='#333333')),
         scene=dict(
             xaxis=dict(showticklabels=False, visible=False, range=[-1.5, 1.5]),
             yaxis=dict(showticklabels=False, visible=False, range=[-1.5, 1.5]),
             zaxis=dict(showticklabels=False, visible=False, range=[-1.5, 1.5]),
-            aspectmode='cube'
+            aspectmode='cube', # Ensures the sphere looks like a sphere
+            bgcolor='rgba(0,0,0,0)' # Transparent background for the scene
         ),
         showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)', # Transparent background for the paper
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background for the plot
         margin=dict(l=0, r=0, b=0, t=40)
     )
     return fig
+# ##################################################
+
 
 # --- Streamlit User Interface ---
 
@@ -156,7 +233,7 @@ st.set_page_config(page_title="Quantum Circuit Visualizer", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    background-color: #FFFBEA; /* <<< CHANGED: Pale Yellow/Cream Background */
+    background-color: #FFFBEA; /* Pale Yellow/Cream Background */
     background-attachment: fixed;
     background-size: cover;
 }
@@ -164,18 +241,18 @@ st.markdown("""
 [data-testid="stAppViewContainer"] h1,
 [data-testid="stAppViewContainer"] h2,
 [data-testid="stAppViewContainer"] h3,
-[data-testid="stAppViewContainer"] .stMarkdown p { color: #333333 !important; } /* <<< CHANGED: Dark text */
-[data-testid="stSidebar"] { background-color: #FAF0E6; } /* <<< CHANGED: Light cream/linen sidebar */
+[data-testid="stAppViewContainer"] .stMarkdown p { color: #333333 !important; } /* Dark text */
+[data-testid="stSidebar"] { background-color: #FAF0E6; } /* Light cream/linen sidebar */
 [data-testid="stSidebar"] .stMarkdown,
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 { color: #333333 !important; } /* <<< CHANGED: Dark text */
+[data-testid="stSidebar"] h3 { color: #333333 !important; } /* Dark text */
 [data-testid="stMetric"] label,
-[data-testid="stMetric"] div { color: #333333 !important; } /* <<< CHANGED: Dark text */
-[data-testid="stInfo"] { background-color: rgba(240, 230, 140, 0.3); } /* <<< CHANGED: Light yellow info box */
+[data-testid="stMetric"] div { color: #333333 !important; } /* Dark text */
+[data-testid="stInfo"] { background-color: rgba(240, 230, 140, 0.3); } /* Light yellow info box */
 [data-testid="stExpander"] summary {
-    color: #004E98 !important; /* <<< CHANGED: Dark readable blue */
+    color: #004E98 !important; /* Dark readable blue */
     font-weight: bold;
 }
 </style>
@@ -219,18 +296,18 @@ if qasm_text is not None:
         # # --- MATPLOTLIB STYLE UPDATED FOR LIGHT THEME ---
         # ##################################################
         custom_style = {
-            "textcolor": "#333333",       # <<< CHANGED
-            "gatetextcolor": "#000000",      # <<< CHANGED
-            "labelcolor": "#333333",        # <<< CHANGED
-            "linecolor": "#888888",         # <<< CHANGED
-            "creglinecolor": "#888888",      # <<< CHANGED
-            "gatefacecolor": "#ADD8E6",     # <<< CHANGED (Light Blue)
+            "textcolor": "#333333",       # Dark text
+            "gatetextcolor": "#000000",      # Black gate text
+            "labelcolor": "#333333",        # Dark label
+            "linecolor": "#888888",         # Grey lines
+            "creglinecolor": "#888888",      # Grey classical lines
+            "gatefacecolor": "#ADD8E6",     # Light Blue gate background
             "barrierfacecolor": "#AAAAAA",
             "fontsize": 10,
             "displaycolor": {
-                'h': '#87CEEB',         # <<< CHANGED (Sky Blue)
-                'cx': '#87CEEB',        # <<< CHANGED (Sky Blue)
-                'x': '#F08080',         # <<< CHANGED (Light Coral)
+                'h': '#87CEEB',         # Sky Blue
+                'cx': '#87CEEB',        # Sky Blue
+                'x': '#F08080',         # Light Coral
                 'measure': '#808080',
             },
             "dpi": 200,
@@ -280,12 +357,12 @@ if qasm_text is not None:
                 # # --- HISTOGRAM STYLE UPDATED FOR LIGHT THEME ---
                 # ##################################################
                 hist_fig.update_layout(
-                    title=dict(text=f"Results from {num_shots} shots", font_color='#333333'), # <<< CHANGED
+                    title=dict(text=f"Results from {num_shots} shots", font_color='#333333'),
                     xaxis_title="Outcome (Classical Bit String)",
                     yaxis_title="Counts",
                     paper_bgcolor='rgba(0,0,0,0)', 
-                    plot_bgcolor='rgba(230, 230, 230, 0.2)', # <<< CHANGED
-                    font_color='#333333' # <<< CHANGED
+                    plot_bgcolor='rgba(230, 230, 230, 0.2)',
+                    font_color='#333333'
                 )
                 # ##################################################
                 

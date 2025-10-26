@@ -10,7 +10,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, partial_trace, DensityMatrix # <<< ADDED DensityMatrix
 from qiskit_aer import AerSimulator # <<< CHANGED from Aer
-from qiskit_aer.noise import NoiseModel, bit_flip, phase_flip, depolarizing_error # <<< NEW
+from qiskit_aer.noise import NoiseModel, bit_flip, phase_flip, depolarizing_error # <<< FIXED
 import plotly.graph_objects as go
 import io
 import matplotlib.pyplot as plt
@@ -531,3 +531,4 @@ if qasm_text is not None:
         st.warning("Please ensure the QASM is valid and that your environment includes qiskit-aer (`pip install qiskit-aer`).")
 else:
     st.info("Please select an example or upload a .qasm file using the sidebar to begin.")
+
